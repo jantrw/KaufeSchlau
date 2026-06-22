@@ -1,0 +1,34 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Java / Maven / Gradle
+target/
+build/
+.gradle/
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# OS files
+.DS_Store
+Thumbs.db
