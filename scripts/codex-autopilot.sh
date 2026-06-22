@@ -53,9 +53,10 @@ codex_exec() {
   local -a args
 
   args=(
+    -a
+    never
     exec
     --sandbox "$sandbox"
-    --ask-for-approval never
     --output-last-message "$output_file"
   )
 
