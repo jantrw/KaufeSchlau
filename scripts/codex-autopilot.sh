@@ -1,0 +1,451 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE_BRANCH="${BASE_BRANCH:-main}"
+PHASE_LABEL="${PHASE_LABEL:-phase-1}"
+BLOCKED_LABEL="${BLOCKED_LABEL:-codex-blocked}"
+IN_PROGRESS_LABEL="${IN_PROGRESS_LABEL:-codex-in-progress}"
+REVIEWED_LABEL="${REVIEWED_LABEL:-codex-reviewed}"
+MAX_ISSUES="${MAX_ISSUES:-10}"
+MAX_ROUNDS="${MAX_ROUNDS:-5}"
+PUSH="${PUSH:-false}"
+
+WORKER_MODEL="${WORKER_MODEL:-gpt-5.5}"
+WORKER_REASONING_EFFORT="${WORKER_REASONING_EFFORT:-medium}"
+REVIEWER_MODEL="${REVIEWER_MODEL:-gpt-5.4}"
+REVIEWER_REASONING_EFFORT="${REVIEWER_REASONING_EFFORT:-medium}"
+DOC_WORKER_MODEL="${DOC_WORKER_MODEL:-gpt-5.4}"
+DOC_WORKER_REASONING_EFFORT="${DOC_WORKER_REASONING_EFFORT:-low}"
+
+mkdir -p .codex-loop
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "Missing command: $1"
+    exit 1
+  }
+}
+
+need git
+need gh
+need codex
+
+ensure_clean_tree() {
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "Working tree is dirty. Commit or stash first."
+    exit 1
+  fi
+}
+
+slugify() {
+  echo "$1" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
+    | cut -c1-60
+}
+
+codex_exec() {
+  local sandbox="$1"
+  local output_file="$2"
+  local model="$3"
+  local reasoning_effort="$4"
+  local prompt="$5"
+  local -a args
+
+  args=(
+    exec
+    --sandbox "$sandbox"
+    --ask-for-approval never
+    --output-last-message "$output_file"
+  )
+
+  if [[ -n "$model" ]]; then
+    args+=(--model "$model")
+  fi
+
+  if [[ -n "$reasoning_effort" ]]; then
+    args+=(-c "model_reasoning_effort=\"$reasoning_effort\"")
+  fi
+
+  codex "${args[@]}" "$prompt"
+}
+
+next_issue_number() {
+  gh issue list \
+    --state open \
+    --search "label:${PHASE_LABEL} -label:${BLOCKED_LABEL} -label:${REVIEWED_LABEL} -label:${IN_PROGRESS_LABEL}" \
+    --limit 1 \
+    --json number \
+    --jq '.[0].number // empty'
+}
+
+issue_field() {
+  local number="$1"
+  local field="$2"
+
+  gh issue view "$number" --json "$field" --jq ".${field}"
+}
+
+run_worker_initial() {
+  codex_exec \
+    workspace-write \
+    .codex-loop/worker.md \
+    "$WORKER_MODEL" \
+    "$WORKER_REASONING_EFFORT" \
+    "$(cat <<'EOF'
+$issue-worker
+
+Bearbeite das Issue aus .codex-loop/issue.md.
+
+Regeln:
+- Bearbeite genau dieses eine Issue.
+- Mache die kleinste korrekte Änderung.
+- Keine unrelated Refactors.
+- Aktualisiere Doku-Dateien nicht selbst, außer das Issue verlangt explizit Doku als Kernumfang.
+- Führe relevante Tests, Linter oder Typechecks aus.
+- Prüfe selbst `git diff`.
+- Wenn fertig: schreibe am Ende exakt `READY_FOR_REVIEW`.
+- Wenn blockiert: schreibe am Ende exakt `BLOCKED`.
+EOF
+)"
+}
+
+run_worker_fix() {
+  codex_exec \
+    workspace-write \
+    .codex-loop/worker.md \
+    "$WORKER_MODEL" \
+    "$WORKER_REASONING_EFFORT" \
+    "$(cat <<'EOF'
+$issue-worker
+
+Lies .codex-loop/review.md.
+
+Wenn dort CHANGES_REQUESTED steht:
+- Setze alle Review-Punkte um.
+- Ändere nur, was nötig ist.
+- Aktualisiere Doku-Dateien nicht selbst, außer das Issue verlangt explizit Doku als Kernumfang.
+- Führe relevante Tests, Linter oder Typechecks aus.
+- Prüfe selbst `git diff`.
+- Schreibe am Ende exakt `READY_FOR_REVIEW`.
+
+Wenn du blockiert bist:
+- Erkläre kurz warum.
+- Schreibe am Ende exakt `BLOCKED`.
+EOF
+)"
+}
+
+run_reviewer() {
+  codex_exec \
+    read-only \
+    .codex-loop/review.md \
+    "$REVIEWER_MODEL" \
+    "$REVIEWER_REASONING_EFFORT" \
+    "$(cat <<EOF
+\$code-reviewer
+
+Reviewe den aktuellen Diff gegen $BASE_BRANCH.
+
+Kontext:
+- Issue steht in .codex-loop/issue.md.
+- Worker-Zusammenfassung steht in .codex-loop/worker.md.
+
+Prüfe:
+- Erfüllt der Code das Issue?
+- Gibt es Bugs, Edge Cases oder Regressionen?
+- Sind Tests ausreichend?
+- Gibt es Security-, Datenverlust- oder Concurrency-Probleme?
+- Ist die Änderung unnötig groß?
+
+Wichtig:
+- Nicht schreiben.
+- Nicht fixen.
+- Nur reviewen.
+
+Antworte exakt mit einem dieser Formate:
+
+APPROVED
+
+oder
+
+CHANGES_REQUESTED:
+- konkreter Punkt
+- konkreter Punkt
+EOF
+)"
+}
+
+run_doc_worker_initial() {
+  codex_exec \
+    workspace-write \
+    .codex-loop/doc-worker.md \
+    "$DOC_WORKER_MODEL" \
+    "$DOC_WORKER_REASONING_EFFORT" \
+    "$(cat <<'EOF'
+$issue-worker
+
+Lies .codex-loop/issue.md, .codex-loop/worker.md und den aktuellen Git-Diff.
+
+Deine Aufgabe:
+- Prüfe nur `README.md`, `docs/architecture.md` und `docs/documentation.md`.
+- Erstelle fehlende Dateien nur, wenn sie für die aktuelle Änderung nötig sind.
+- Dokumentiere nur reale Verhaltens-, Architektur- oder Nutzungsänderungen.
+- Keine allgemeinen Umschreibungen, kein Doku-Refactor.
+- Führe nach Doku-Änderungen einen kurzen Self-Check auf Konsistenz mit dem Diff durch.
+
+Wenn Doku angepasst wurde:
+- schreibe am Ende exakt `READY_FOR_REVIEW`.
+
+Wenn keine Doku-Änderung nötig ist:
+- schreibe am Ende exakt `DOCS_UNCHANGED`.
+
+Wenn blockiert:
+- Erkläre kurz warum.
+- schreibe am Ende exakt `BLOCKED`.
+EOF
+)"
+}
+
+run_doc_worker_fix() {
+  codex_exec \
+    workspace-write \
+    .codex-loop/doc-worker.md \
+    "$DOC_WORKER_MODEL" \
+    "$DOC_WORKER_REASONING_EFFORT" \
+    "$(cat <<'EOF'
+$issue-worker
+
+Lies .codex-loop/issue.md, .codex-loop/worker.md und .codex-loop/review.md.
+
+Wenn dort CHANGES_REQUESTED steht:
+- Setze alle Doku-Review-Punkte um.
+- Bearbeite nur `README.md`, `docs/architecture.md` und `docs/documentation.md`.
+- Halte die Doku knapp und deckungsgleich mit dem Code-Diff.
+- Führe einen kurzen Self-Check auf Konsistenz mit dem Diff durch.
+- Schreibe am Ende exakt `READY_FOR_REVIEW`.
+
+Wenn blockiert:
+- Erkläre kurz warum.
+- schreibe am Ende exakt `BLOCKED`.
+EOF
+)"
+}
+
+run_reviewer_docs() {
+  codex_exec \
+    read-only \
+    .codex-loop/review.md \
+    "$REVIEWER_MODEL" \
+    "$REVIEWER_REASONING_EFFORT" \
+    "$(cat <<EOF
+\$code-reviewer
+
+Reviewe nur die Dokumentationsänderungen im aktuellen Diff gegen $BASE_BRANCH.
+
+Kontext:
+- Issue steht in .codex-loop/issue.md.
+- Worker-Zusammenfassung steht in .codex-loop/worker.md.
+- Doku-Worker-Zusammenfassung steht in .codex-loop/doc-worker.md.
+
+Prüfe:
+- Sind `README.md`, `docs/architecture.md` und `docs/documentation.md` korrekt zum tatsächlichen Code-Diff?
+- Fehlt eine wichtige Nutzungs- oder Architekturinfo?
+- Enthält die Doku Behauptungen, die der Code nicht erfüllt?
+- Ist die Änderung knapp statt aufgebläht?
+
+Wichtig:
+- Nicht schreiben.
+- Nicht fixen.
+- Nur reviewen.
+
+Antworte exakt mit einem dieser Formate:
+
+APPROVED
+
+oder
+
+CHANGES_REQUESTED:
+- konkreter Punkt
+- konkreter Punkt
+EOF
+)"
+}
+
+mark_issue_blocked() {
+  local number="$1"
+  local file="$2"
+
+  gh issue comment "$number" --body-file "$file" || true
+  gh issue edit "$number" --add-label "$BLOCKED_LABEL" >/dev/null 2>&1 || true
+  gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
+}
+
+main() {
+  ensure_clean_tree
+
+  git fetch origin "$BASE_BRANCH" || true
+
+  processed=0
+
+  while [[ "$processed" -lt "$MAX_ISSUES" ]]; do
+    number="$(next_issue_number)"
+
+    if [[ -z "$number" ]]; then
+      echo "No open issues ready for processing."
+      exit 0
+    fi
+
+    title="$(issue_field "$number" title)"
+    body="$(issue_field "$number" body)"
+    url="$(issue_field "$number" url)"
+
+    branch="codex/issue-${number}-$(slugify "$title")"
+
+    echo
+    echo "=== Working on issue #$number: $title ==="
+
+    git checkout "$BASE_BRANCH"
+    git pull --ff-only origin "$BASE_BRANCH" || true
+    git checkout -B "$branch"
+
+    cat > .codex-loop/issue.md <<EOF
+# Issue #$number
+
+Title: $title
+URL: $url
+
+$body
+EOF
+
+    gh issue edit "$number" --add-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
+
+    run_worker_initial
+
+    if grep -q "BLOCKED" .codex-loop/worker.md; then
+      echo "Worker blocked on issue #$number."
+      mark_issue_blocked "$number" .codex-loop/worker.md
+      exit 1
+    fi
+
+    round=1
+
+    while [[ "$round" -le "$MAX_ROUNDS" ]]; do
+      echo
+      echo "--- Code review round $round for issue #$number ---"
+
+      run_reviewer
+
+      if grep -q "^APPROVED" .codex-loop/review.md; then
+        echo "Code reviewer approved issue #$number."
+        break
+      fi
+
+      if grep -q "^CHANGES_REQUESTED" .codex-loop/review.md; then
+        echo "Reviewer requested code changes. Worker continues."
+        run_worker_fix
+
+        if grep -q "BLOCKED" .codex-loop/worker.md; then
+          echo "Worker blocked while fixing review feedback."
+          mark_issue_blocked "$number" .codex-loop/worker.md
+          exit 1
+        fi
+
+        round=$((round + 1))
+        continue
+      fi
+
+      echo "Reviewer output was invalid:"
+      cat .codex-loop/review.md
+      exit 1
+    done
+
+    if [[ "$round" -gt "$MAX_ROUNDS" ]]; then
+      echo "Max code review rounds reached for issue #$number."
+      mark_issue_blocked "$number" .codex-loop/review.md
+      exit 1
+    fi
+
+    run_doc_worker_initial
+
+    if grep -q "BLOCKED" .codex-loop/doc-worker.md; then
+      echo "Doc worker blocked on issue #$number."
+      mark_issue_blocked "$number" .codex-loop/doc-worker.md
+      exit 1
+    fi
+
+    if grep -q "DOCS_UNCHANGED" .codex-loop/doc-worker.md; then
+      echo "Doc worker reports no documentation changes needed."
+    else
+      doc_round=1
+
+      while [[ "$doc_round" -le "$MAX_ROUNDS" ]]; do
+        echo
+        echo "--- Doc review round $doc_round for issue #$number ---"
+
+        run_reviewer_docs
+
+        if grep -q "^APPROVED" .codex-loop/review.md; then
+          echo "Reviewer approved docs for issue #$number."
+          break
+        fi
+
+        if grep -q "^CHANGES_REQUESTED" .codex-loop/review.md; then
+          echo "Reviewer requested doc changes. Doc worker continues."
+          run_doc_worker_fix
+
+          if grep -q "BLOCKED" .codex-loop/doc-worker.md; then
+            echo "Doc worker blocked while fixing review feedback."
+            mark_issue_blocked "$number" .codex-loop/doc-worker.md
+            exit 1
+          fi
+
+          doc_round=$((doc_round + 1))
+          continue
+        fi
+
+        echo "Reviewer output for docs was invalid:"
+        cat .codex-loop/review.md
+        exit 1
+      done
+
+      if [[ "$doc_round" -gt "$MAX_ROUNDS" ]]; then
+        echo "Max doc review rounds reached for issue #$number."
+        mark_issue_blocked "$number" .codex-loop/review.md
+        exit 1
+      fi
+    fi
+
+    git add -A
+
+    if git diff --cached --quiet; then
+      echo "No changes to commit for issue #$number."
+      gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
+      gh issue edit "$number" --add-label "$REVIEWED_LABEL" >/dev/null 2>&1 || true
+      processed=$((processed + 1))
+      continue
+    fi
+
+    git commit -m "Fix #$number: $title"
+
+    if [[ "$PUSH" == "true" ]]; then
+      git push -u origin "$branch"
+      gh pr create \
+        --title "Fix #$number: $title" \
+        --body "Automated Codex worker/reviewer/doc loop for #$number." \
+        --base "$BASE_BRANCH" \
+        --head "$branch"
+      gh issue close "$number" --comment "Geschlossen nach automatischer PR-Erstellung für #$number."
+    fi
+
+    gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
+    gh issue edit "$number" --add-label "$REVIEWED_LABEL" >/dev/null 2>&1 || true
+
+    processed=$((processed + 1))
+  done
+
+  echo
+  echo "Done. Processed $processed issue(s)."
+}
+
+main "$@"
