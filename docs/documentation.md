@@ -16,7 +16,6 @@ WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIE
 
 ### Verhalten
 
-- Es werden nur offene Issues mit dem Label `phase-1` verarbeitet.
 - Wenn mehrere passende Issues offen sind, wird immer die kleinste Issue-Nummer zuerst genommen.
 - Issues mit `codex-blocked`, `codex-in-progress` oder `codex-reviewed` werden übersprungen.
 - Ein Issue bleibt im Review-Loop, bis der Reviewer `APPROVED` liefert oder `MAX_ROUNDS` erreicht ist.
