@@ -14,10 +14,11 @@ WORKER_MODEL="${WORKER_MODEL:-gpt-5.5}"
 WORKER_REASONING_EFFORT="${WORKER_REASONING_EFFORT:-medium}"
 REVIEWER_MODEL="${REVIEWER_MODEL:-gpt-5.4}"
 REVIEWER_REASONING_EFFORT="${REVIEWER_REASONING_EFFORT:-medium}"
-DOC_WORKER_MODEL="${DOC_WORKER_MODEL:-gpt-5.4}"
+DOC_WORKER_MODEL="${DOC_WORKER_MODEL:-gpt-5.4-mini}"
 DOC_WORKER_REASONING_EFFORT="${DOC_WORKER_REASONING_EFFORT:-low}"
+LOOP_DIR="${LOOP_DIR:-.codex-loop}"
 
-mkdir -p .codex-loop
+mkdir -p "$LOOP_DIR"
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -31,7 +32,10 @@ need gh
 need codex
 
 ensure_clean_tree() {
-  if ! git diff --quiet || ! git diff --cached --quiet; then
+  local status
+  status="$(git status --porcelain=v1 --untracked-files=all | grep -v " $LOOP_DIR/" || true)"
+
+  if [[ -n "$status" ]]; then
     echo "Working tree is dirty. Commit or stash first."
     exit 1
   fi
@@ -85,6 +89,46 @@ issue_field() {
   local field="$2"
 
   gh issue view "$number" --json "$field" --jq ".${field}"
+}
+
+init_loop_dir() {
+  mkdir -p "$LOOP_DIR"
+
+  for file in issue.md review.md worker.md doc-worker.md; do
+    if [[ ! -f "$LOOP_DIR/$file" ]]; then
+      : > "$LOOP_DIR/$file"
+    fi
+  done
+
+  if [[ ! -f "$LOOP_DIR/state.json" ]]; then
+    cat > "$LOOP_DIR/state.json" <<'EOF'
+{
+  "current_issue": null,
+  "current_branch": "",
+  "stage": "idle",
+  "review_round": 0,
+  "doc_review_round": 0
+}
+EOF
+  fi
+}
+
+write_state() {
+  local issue_number="$1"
+  local branch="$2"
+  local stage="$3"
+  local review_round="$4"
+  local doc_review_round="$5"
+
+  cat > "$LOOP_DIR/state.json" <<EOF
+{
+  "current_issue": $issue_number,
+  "current_branch": "$branch",
+  "stage": "$stage",
+  "review_round": $review_round,
+  "doc_review_round": $doc_review_round
+}
+EOF
 }
 
 run_worker_initial() {
@@ -283,6 +327,7 @@ mark_issue_blocked() {
 }
 
 main() {
+  init_loop_dir
   ensure_clean_tree
 
   git fetch origin "$BASE_BRANCH" || true
@@ -309,9 +354,10 @@ main() {
     git checkout "$BASE_BRANCH"
     git pull --ff-only origin "$BASE_BRANCH" || true
     git checkout -B "$branch"
-    mkdir -p .codex-loop
+    init_loop_dir
+    write_state "$number" "$branch" "selected" 0 0
 
-    cat > .codex-loop/issue.md <<EOF
+    cat > "$LOOP_DIR/issue.md" <<EOF
 # Issue #$number
 
 Title: $title
@@ -323,10 +369,12 @@ EOF
     gh issue edit "$number" --add-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
 
     run_worker_initial
+    write_state "$number" "$branch" "worker_done" 0 0
 
-    if grep -q "BLOCKED" .codex-loop/worker.md; then
+    if grep -q "BLOCKED" "$LOOP_DIR/worker.md"; then
       echo "Worker blocked on issue #$number."
-      mark_issue_blocked "$number" .codex-loop/worker.md
+      write_state "$number" "$branch" "blocked" 0 0
+      mark_issue_blocked "$number" "$LOOP_DIR/worker.md"
       exit 1
     fi
 
@@ -337,19 +385,22 @@ EOF
       echo "--- Code review round $round for issue #$number ---"
 
       run_reviewer
+      write_state "$number" "$branch" "code_review" "$round" 0
 
-      if grep -q "^APPROVED" .codex-loop/review.md; then
+      if grep -q "^APPROVED" "$LOOP_DIR/review.md"; then
         echo "Code reviewer approved issue #$number."
         break
       fi
 
-      if grep -q "^CHANGES_REQUESTED" .codex-loop/review.md; then
+      if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
         echo "Reviewer requested code changes. Worker continues."
         run_worker_fix
+        write_state "$number" "$branch" "worker_fix" "$round" 0
 
-        if grep -q "BLOCKED" .codex-loop/worker.md; then
+        if grep -q "BLOCKED" "$LOOP_DIR/worker.md"; then
           echo "Worker blocked while fixing review feedback."
-          mark_issue_blocked "$number" .codex-loop/worker.md
+          write_state "$number" "$branch" "blocked" "$round" 0
+          mark_issue_blocked "$number" "$LOOP_DIR/worker.md"
           exit 1
         fi
 
@@ -358,26 +409,30 @@ EOF
       fi
 
       echo "Reviewer output was invalid:"
-      cat .codex-loop/review.md
+      cat "$LOOP_DIR/review.md"
       exit 1
     done
 
     if [[ "$round" -gt "$MAX_ROUNDS" ]]; then
       echo "Max code review rounds reached for issue #$number."
-      mark_issue_blocked "$number" .codex-loop/review.md
+      write_state "$number" "$branch" "blocked" "$round" 0
+      mark_issue_blocked "$number" "$LOOP_DIR/review.md"
       exit 1
     fi
 
     run_doc_worker_initial
+    write_state "$number" "$branch" "doc_worker_done" "$round" 0
 
-    if grep -q "BLOCKED" .codex-loop/doc-worker.md; then
+    if grep -q "BLOCKED" "$LOOP_DIR/doc-worker.md"; then
       echo "Doc worker blocked on issue #$number."
-      mark_issue_blocked "$number" .codex-loop/doc-worker.md
+      write_state "$number" "$branch" "blocked" "$round" 0
+      mark_issue_blocked "$number" "$LOOP_DIR/doc-worker.md"
       exit 1
     fi
 
-    if grep -q "DOCS_UNCHANGED" .codex-loop/doc-worker.md; then
+    if grep -q "DOCS_UNCHANGED" "$LOOP_DIR/doc-worker.md"; then
       echo "Doc worker reports no documentation changes needed."
+      write_state "$number" "$branch" "ready_to_commit" "$round" 0
     else
       doc_round=1
 
@@ -386,19 +441,22 @@ EOF
         echo "--- Doc review round $doc_round for issue #$number ---"
 
         run_reviewer_docs
+        write_state "$number" "$branch" "doc_review" "$round" "$doc_round"
 
-        if grep -q "^APPROVED" .codex-loop/review.md; then
+        if grep -q "^APPROVED" "$LOOP_DIR/review.md"; then
           echo "Reviewer approved docs for issue #$number."
           break
         fi
 
-        if grep -q "^CHANGES_REQUESTED" .codex-loop/review.md; then
+        if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
           echo "Reviewer requested doc changes. Doc worker continues."
           run_doc_worker_fix
+          write_state "$number" "$branch" "doc_worker_fix" "$round" "$doc_round"
 
-          if grep -q "BLOCKED" .codex-loop/doc-worker.md; then
+          if grep -q "BLOCKED" "$LOOP_DIR/doc-worker.md"; then
             echo "Doc worker blocked while fixing review feedback."
-            mark_issue_blocked "$number" .codex-loop/doc-worker.md
+            write_state "$number" "$branch" "blocked" "$round" "$doc_round"
+            mark_issue_blocked "$number" "$LOOP_DIR/doc-worker.md"
             exit 1
           fi
 
@@ -407,21 +465,24 @@ EOF
         fi
 
         echo "Reviewer output for docs was invalid:"
-        cat .codex-loop/review.md
+        cat "$LOOP_DIR/review.md"
         exit 1
       done
 
       if [[ "$doc_round" -gt "$MAX_ROUNDS" ]]; then
         echo "Max doc review rounds reached for issue #$number."
-        mark_issue_blocked "$number" .codex-loop/review.md
+        write_state "$number" "$branch" "blocked" "$round" "$doc_round"
+        mark_issue_blocked "$number" "$LOOP_DIR/review.md"
         exit 1
       fi
     fi
 
     git add -A
+    git restore --staged --source=HEAD -- "$LOOP_DIR" >/dev/null 2>&1 || true
 
     if git diff --cached --quiet; then
       echo "No changes to commit for issue #$number."
+      write_state "$number" "$branch" "reviewed_no_commit" "$round" "${doc_round:-0}"
       gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
       gh issue edit "$number" --add-label "$REVIEWED_LABEL" >/dev/null 2>&1 || true
       processed=$((processed + 1))
@@ -429,6 +490,7 @@ EOF
     fi
 
     git commit -m "Fix #$number: $title"
+    write_state "$number" "$branch" "committed" "$round" "${doc_round:-0}"
 
     if [[ "$PUSH" == "true" ]]; then
       git push -u origin "$branch"
@@ -438,6 +500,7 @@ EOF
         --base "$BASE_BRANCH" \
         --head "$branch"
       gh issue close "$number" --comment "Geschlossen nach automatischer PR-Erstellung für #$number."
+      write_state "$number" "$branch" "pushed_and_closed" "$round" "${doc_round:-0}"
     fi
 
     gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true

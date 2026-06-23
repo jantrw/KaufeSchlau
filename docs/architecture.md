@@ -9,3 +9,4 @@ Das Repository enthält mit `scripts/codex-autopilot.sh` einen einfachen Agent-L
 - Doku-Worker: pflegt nur `README.md`, `docs/architecture.md` und `docs/documentation.md`
 
 Die Issue-Auswahl erfolgt nach aufsteigender Issue-Nummer innerhalb der offenen passenden `phase-1`-Issues.
+`.codex-loop/` ist Teil des Repos und dient als sichtbarer lokaler Laufzustand, wird aber aus den eigentlichen Issue-Commits herausgehalten.
