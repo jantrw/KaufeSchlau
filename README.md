@@ -4,7 +4,7 @@
 
 Das Skript `scripts/codex-autopilot.sh` verarbeitet offene GitHub-Issues in einem festen Loop.
 
-`.codex-loop/` ist bewusst versioniert. Der Ordner zeigt den letzten lokalen Loop-Stand, wird aber von den eigentlichen Issue-Commits ausgeschlossen und blockiert den Loop-Start nicht.
+`.codex-loop/` ist bewusst versioniert. Der Ordner zeigt den letzten lokalen Loop-Stand, blockiert den Loop-Start nicht und wird zusammen mit echten Issue-Änderungen in Branch und PR mitgeführt.
 
 Beispiel:
 
