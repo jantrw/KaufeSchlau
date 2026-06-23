@@ -309,6 +309,7 @@ main() {
     git checkout "$BASE_BRANCH"
     git pull --ff-only origin "$BASE_BRANCH" || true
     git checkout -B "$branch"
+    mkdir -p .codex-loop
 
     cat > .codex-loop/issue.md <<EOF
 # Issue #$number
