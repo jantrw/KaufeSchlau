@@ -2,6 +2,7 @@ package de.kaufeschlau.discounter.controller;
 
 import de.kaufeschlau.discounter.model.AldiRegion;
 import de.kaufeschlau.discounter.model.Discounter;
+import de.kaufeschlau.discounter.model.LocationRequirement;
 import de.kaufeschlau.discounter.model.RegionType;
 import de.kaufeschlau.discounter.model.UrlMode;
 import de.kaufeschlau.discounter.service.AldiRegionResolverService;
@@ -48,9 +49,11 @@ class ProspectController {
                 ? filterAutomaticAldi(requestedDiscounters, plz, region)
                 : requestedDiscounters;
 
-        requireLocationWhenNeeded(selectedIds, plz, region);
+        var requirement = requireLocationWhenNeeded(selectedIds, plz, region);
 
-        return new ProspectListResponse(discounters.stream().map(this::toResponse).toList());
+        return new ProspectListResponse(discounters.stream()
+                .map(discounter -> toResponse(discounter, requirement))
+                .toList());
     }
 
     @GetMapping("/{id}")
@@ -60,8 +63,8 @@ class ProspectController {
             @RequestParam(required = false) String region) {
         var discounter = getDiscounter(id);
         validateLocationParameters(List.of(discounter), plz, region);
-        requireLocationWhenNeeded(List.of(id), plz, region);
-        return toResponse(discounter);
+        var requirement = requireLocationWhenNeeded(List.of(id), plz, region);
+        return toResponse(discounter, requirement);
     }
 
     private void validateLocationParameters(Collection<Discounter> discounters, String plz, String region) {
@@ -81,25 +84,25 @@ class ProspectController {
         }
     }
 
-    private void requireLocationWhenNeeded(List<String> selectedIds, String plz, String region) {
+    private LocationRequirement requireLocationWhenNeeded(List<String> selectedIds, String plz, String region) {
         var requirement = locationRequirementService.evaluate(selectedIds);
         if (!requirement.required()) {
-            return;
+            return requirement;
         }
 
         if (hasText(plz)) {
             aldiRegionResolverService.resolve(plz);
-            return;
+            return requirement;
         }
         if (hasText(region)) {
             if (requirement.discounterIds().stream()
                     .map(this::getDiscounter)
                     .anyMatch(discounter -> discounter.regionType() == RegionType.PLZ_BASIERT)) {
                 aldiRegionResolverService.resolveBundeslandRegion(region);
-                return;
+                return requirement;
             }
             aldiRegionResolverService.resolveRegion(region);
-            return;
+            return requirement;
         }
 
         throw new ApiException(
@@ -139,13 +142,13 @@ class ProspectController {
         return aldiRegionResolverService.resolveRegion(region);
     }
 
-    private ProspectResponse toResponse(Discounter discounter) {
+    private ProspectResponse toResponse(Discounter discounter, LocationRequirement requirement) {
         return new ProspectResponse(
                 discounter.id(),
                 discounter.name(),
                 discounter.prospectUrl(),
                 discounter.urlMode(),
-                discounter.requiresLocationContext(),
+                requirement.discounterIds().contains(discounter.id()),
                 discounter.locationRequirementReason(),
                 fallbackHint(discounter),
                 discounter.resolverHint(),
