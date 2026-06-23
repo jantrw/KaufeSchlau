@@ -110,7 +110,7 @@ class ProspectControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("aldi-sued"))
                 .andExpect(jsonPath("$.url").value("https://www.aldi-sued.de/prospekte"))
-                .andExpect(jsonPath("$.requiresLocationContext").value(true));
+                .andExpect(jsonPath("$.requiresLocationContext").value(false));
     }
 
     @Test
