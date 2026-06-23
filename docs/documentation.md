@@ -18,6 +18,9 @@ WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIE
 
 - Wenn mehrere passende Issues offen sind, wird immer die kleinste Issue-Nummer zuerst genommen.
 - Issues mit `codex-blocked`, `codex-in-progress` oder `codex-reviewed` werden übersprungen.
+- Existiert der erwartete Issue-Branch schon lokal, setzt der Loop dort fort.
+- Existiert er nur auf `origin`, legt der Loop einen lokalen Tracking-Branch darauf an.
+- Nur wenn noch kein Issue-Branch existiert, erstellt der Loop ihn neu von `main`.
 - Ein Issue bleibt im Review-Loop, bis der Reviewer `APPROVED` liefert oder `MAX_ROUNDS` erreicht ist.
 - Der Doku-Worker läuft erst nach erfolgreichem Code-Review.
 - Derselbe Reviewer prüft danach mögliche Doku-Änderungen.

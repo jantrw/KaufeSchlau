@@ -91,6 +91,37 @@ issue_field() {
   gh issue view "$number" --json "$field" --jq ".${field}"
 }
 
+has_local_branch() {
+  local branch="$1"
+  git show-ref --verify --quiet "refs/heads/$branch"
+}
+
+has_remote_branch() {
+  local branch="$1"
+  git show-ref --verify --quiet "refs/remotes/origin/$branch"
+}
+
+checkout_issue_branch() {
+  local branch="$1"
+
+  if has_local_branch "$branch"; then
+    echo "Reusing local branch $branch"
+    git checkout "$branch"
+    return
+  fi
+
+  if has_remote_branch "$branch"; then
+    echo "Reusing remote branch $branch"
+    git checkout -b "$branch" --track "origin/$branch"
+    return
+  fi
+
+  echo "Creating new branch $branch from $BASE_BRANCH"
+  git checkout "$BASE_BRANCH"
+  git pull --ff-only origin "$BASE_BRANCH" || true
+  git checkout -b "$branch"
+}
+
 init_loop_dir() {
   mkdir -p "$LOOP_DIR"
 
@@ -321,9 +352,7 @@ main() {
     echo
     echo "=== Working on issue #$number: $title ==="
 
-    git checkout "$BASE_BRANCH"
-    git pull --ff-only origin "$BASE_BRANCH" || true
-    git checkout -B "$branch"
+    checkout_issue_branch "$branch"
     init_loop_dir
 
     cat > "$LOOP_DIR/issue.md" <<EOF
