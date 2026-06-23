@@ -1,0 +1,89 @@
+kaufeschlau:
+  discounters:
+    - id: aldi-nord
+      name: "Aldi Nord"
+      regionType: ALDI_REGION
+      urlMode: STATIC_ENTRYPOINT
+      aldiRegion: NORD
+      prospectUrl: "https://www.aldi-nord.de/prospekte.html"
+      officialUrl: true
+      requiresLocationContext: true
+      locationRequirementReason: "Nur nötig, wenn Aldi automatisch aus PLZ/Region bestimmt werden soll"
+      supportsManualSelectionWithoutPlz: true
+      requiresStoreSelection: false
+
+    - id: aldi-sued
+      name: "Aldi Süd"
+      regionType: ALDI_REGION
+      urlMode: STATIC_ENTRYPOINT
+      aldiRegion: SUED
+      prospectUrl: "https://www.aldi-sued.de/prospekte"
+      officialUrl: true
+      requiresLocationContext: true
+      locationRequirementReason: "Nur nötig, wenn Aldi automatisch aus PLZ/Region bestimmt werden soll"
+      supportsManualSelectionWithoutPlz: true
+      requiresStoreSelection: false
+
+    - id: lidl
+      name: "Lidl"
+      regionType: OPTIONAL_FILIALE
+      urlMode: STATIC_ENTRYPOINT
+      prospectUrl: "https://www.lidl.de/c/online-prospekte/s10005610"
+      officialUrl: true
+      requiresLocationContext: false
+      supportsManualSelectionWithoutPlz: true
+      requiresStoreSelection: false
+
+    - id: penny
+      name: "Penny"
+      regionType: OPTIONAL_FILIALE
+      urlMode: STATIC_ENTRYPOINT
+      prospectUrl: "https://www.penny.de/angebote"
+      officialUrl: true
+      requiresLocationContext: false
+      supportsManualSelectionWithoutPlz: true
+      requiresStoreSelection: false
+
+    - id: netto-marken-discount
+      name: "Netto Marken-Discount"
+      regionType: PLZ_BASIERT
+      urlMode: LOCATION_RESOLVED
+      prospectUrl: "https://www.netto-online.de/ueber-netto/Online-Prospekte.chtm"
+      officialUrl: true
+      requiresLocationContext: true
+      supportsManualSelectionWithoutPlz: false
+      requiresStoreSelection: true
+      resolverHint: "PLZ -> Filiale -> regionaler Online-Prospekt"
+
+    - id: kaufland
+      name: "Kaufland"
+      regionType: OPTIONAL_FILIALE
+      urlMode: STATIC_ENTRYPOINT
+      prospectUrl: "https://filiale.kaufland.de/prospekte.html"
+      officialUrl: true
+      requiresLocationContext: false
+      supportsManualSelectionWithoutPlz: true
+      requiresStoreSelection: false
+
+    - id: rewe
+      name: "REWE"
+      regionType: PLZ_BASIERT
+      urlMode: LOCATION_RESOLVED
+      prospectUrl: "https://www.rewe.de/angebote/nationale-angebote/"
+      officialUrl: true
+      requiresLocationContext: true
+      supportsManualSelectionWithoutPlz: false
+      requiresStoreSelection: true
+      resolverHint: "PLZ -> Markt -> /angebote/{ort}/{marketId}/{marketSlug}/"
+
+    - id: edeka
+      name: "EDEKA"
+      regionType: PLZ_BASIERT
+      urlMode: LOCATION_RESOLVED
+      prospectUrl: "https://www.edeka.de/angebote/"
+      marketSearchUrl: "https://www.edeka.de/marktsuche.jsp"
+      officialUrl: true
+      requiresLocationContext: true
+      supportsManualSelectionWithoutPlz: false
+      requiresStoreSelection: true
+      resolverHint: "PLZ -> Markt-ID -> /markt-id/{marketId}/prospekt.jsp"
