@@ -1,1 +1,4 @@
-Kein Lauf aktiv.
+CHANGES_REQUESTED:
+- `discounter-backend/src/main/java/de/kaufeschlau/discounter/controller/ProspectController.java:62` validiert `plz`/`region` nur, wenn Standort zwingend ist. Damit sind ungültige Requests wie `GET /api/v1/prospects?retailerIds=lidl&plz=abcde` oder `GET /api/v1/prospects/lidl?region=atlantis` fälschlich `200 OK` statt fachlich abgelehnt. Das verletzt den Issue-Kontext „ungültige Aufrufe fachlich korrekt ablehnen“.
+- `discounter-backend/src/test/java/de/kaufeschlau/discounter/controller/ProspectControllerTest.java` deckt den obigen Fall nicht ab. Es gibt nur Negativtests für standortpflichtige Händler, nicht für ungültige `plz`/`region` bei standortfreien Filtern bzw. Einzelabrufen.
+- `discounter-backend/src/main/java/de/kaufeschlau/discounter/controller/ApiExceptionHandler.java:16` mappt global jedes `IllegalArgumentException` auf `400 INVALID_REQUEST`. Das kaschiert auch interne Programmier-/Konfigurationsfehler als Clientfehler und ist als globale API-Regel zu breit.
