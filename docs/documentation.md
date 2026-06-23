@@ -11,7 +11,7 @@ Start:
 Beispiel mit expliziten Modellen:
 
 ```bash
-WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4 DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
+WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4-mini DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
 ```
 
 ### Verhalten
@@ -24,6 +24,7 @@ WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIE
 - Wenn keine Doku-Änderung nötig ist, meldet der Doku-Worker `DOCS_UNCHANGED`.
 - Bei `PUSH=true` werden Branch und Pull Request erstellt und das Issue danach geschlossen.
 - Modell und Reasoning-Level werden getrennt gesetzt; `gpt-5.5-medium` ist kein einzelner Modell-Slug.
+- `.codex-loop/` ist versioniert, wird aber beim Clean-Check ignoriert und nicht in Issue-Commits aufgenommen.
 
 ### Abbruchfälle
 
