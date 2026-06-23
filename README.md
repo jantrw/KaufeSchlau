@@ -4,6 +4,8 @@
 
 Das Skript `scripts/codex-autopilot.sh` verarbeitet offene GitHub-Issues in einem festen Loop.
 
+Es nimmt dabei immer die kleinste offene passende `phase-1`-Issue-Nummer, solange das Issue nicht `codex-blocked`, `codex-in-progress` oder `codex-reviewed` trägt.
+
 Beispiel:
 
 ```bash

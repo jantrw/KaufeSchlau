@@ -75,9 +75,9 @@ next_issue_number() {
   gh issue list \
     --state open \
     --search "label:${PHASE_LABEL} -label:${BLOCKED_LABEL} -label:${REVIEWED_LABEL} -label:${IN_PROGRESS_LABEL}" \
-    --limit 1 \
+    --limit 100 \
     --json number \
-    --jq '.[0].number // empty'
+    --jq 'sort_by(.number) | .[0].number // empty'
 }
 
 issue_field() {
