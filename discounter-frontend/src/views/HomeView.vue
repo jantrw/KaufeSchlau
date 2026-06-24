@@ -36,10 +36,12 @@ const locationRequired = computed(() =>
   selectedIds.value.length === 0 || selectedRetailers.value.some((retailer) => retailer.requiresLocationContext),
 );
 
-const hasLocation = computed(() => /^\d{5}$/.test(plz.value) || region.value.trim().length > 0);
-const locationError = computed(() =>
-  locationRequired.value && !hasLocation.value ? "Bitte PLZ oder Region eingeben." : "",
-);
+const hasValidPlz = computed(() => /^\d{5}$/.test(plz.value));
+const hasLocation = computed(() => hasValidPlz.value || region.value.trim().length > 0);
+const locationError = computed(() => {
+  if (plz.value.length > 0 && !hasValidPlz.value) return "Bitte fünfstellige PLZ eingeben oder Feld leeren.";
+  return locationRequired.value && !hasLocation.value ? "Bitte PLZ oder Region eingeben." : "";
+});
 
 async function loadProspects() {
   const requestId = ++latestRequestId;
