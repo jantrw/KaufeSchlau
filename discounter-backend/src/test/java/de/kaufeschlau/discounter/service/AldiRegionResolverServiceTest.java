@@ -25,6 +25,11 @@ class AldiRegionResolverServiceTest {
     }
 
     @Test
+    void resolvesHessenRegionToAldiSued() {
+        assertThat(service.resolveRegion("hessen")).isEqualTo(AldiRegion.SUED);
+    }
+
+    @Test
     void rejectsInvalidPlz() {
         assertThatThrownBy(() -> service.resolve("6518"))
                 .isInstanceOf(IllegalArgumentException.class)
