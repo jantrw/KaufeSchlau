@@ -6,9 +6,10 @@ export interface Retailer {
 }
 
 export interface ProspectLink extends Retailer {
-  regionType: string;
-  urlMode: string;
+  regionType?: string;
+  urlMode?: string;
   prospectUrl: string;
+  notice?: string;
   resolvedRegion?: string;
   resolvedDynamically?: boolean;
   fallbackUsed?: boolean;

@@ -29,8 +29,8 @@ const emit = defineEmits<{
           inputmode="numeric"
           maxlength="5"
           placeholder="65185"
-          :invalid="required && plz.length > 0 && !/^\\d{5}$/.test(plz)"
-          @update:model-value="emit('update:plz', String($event).replace(/\\D/g, '').slice(0, 5))"
+          :invalid="plz.length > 0 && !/^\d{5}$/.test(plz)"
+          @update:model-value="emit('update:plz', String($event).replace(/\D/g, '').slice(0, 5))"
         />
       </label>
       <label>

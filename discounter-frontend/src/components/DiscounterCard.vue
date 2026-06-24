@@ -20,11 +20,14 @@ const resolvedRegionLabels: Record<string, string> = {
   SUED: "Aldi Süd",
 };
 
-function regionLabel(prospect: ProspectLink) {
+function regionLabel(prospect: ProspectLink): string | undefined {
   if (prospect.resolvedRegion) {
     return resolvedRegionLabels[prospect.resolvedRegion] ?? `Region: ${prospect.resolvedRegion}`;
   }
-  return regionTypeLabels[prospect.regionType] ?? "Region unbekannt";
+  if (!prospect.regionType) {
+    return undefined;
+  }
+  return regionTypeLabels[prospect.regionType];
 }
 </script>
 
@@ -32,16 +35,19 @@ function regionLabel(prospect: ProspectLink) {
   <Card class="prospect-card">
     <template #title>{{ prospect.name }}</template>
     <template #subtitle>
-      <Tag :value="regionLabel(prospect)" severity="info" />
+      <Tag v-if="regionLabel(prospect)" :value="regionLabel(prospect)" severity="info" />
     </template>
     <template #content>
-      <p v-if="prospect.requiresStoreSelection" class="hint">
+      <p v-if="prospect.notice" class="hint">{{ prospect.notice }}</p>
+      <p v-else-if="prospect.requiresStoreSelection" class="hint">
         Filiale oder PLZ beim Händler wählen. KaufeSchlau nutzt aktuell den offiziellen Einstiegspunkt.
       </p>
       <p v-if="prospect.fallbackUsed" class="hint">
         Offizieller Einstiegspunkt angezeigt; konkrete Wochenauflösung folgt später.
       </p>
-      <p v-if="!prospect.requiresStoreSelection && !prospect.fallbackUsed" class="hint">Offizieller Prospektlink verfügbar.</p>
+      <p v-if="!prospect.notice && !prospect.requiresStoreSelection && !prospect.fallbackUsed" class="hint">
+        Offizieller Prospektlink verfügbar.
+      </p>
     </template>
     <template #footer>
       <Button as="a" :href="prospect.prospectUrl" target="_blank" rel="noopener" label="Zum Prospekt" />

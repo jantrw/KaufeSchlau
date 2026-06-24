@@ -62,6 +62,16 @@ describe("HomeView", () => {
     expect(wrapper.text()).toContain("Diese Händler können ohne PLZ oder Region geladen werden.");
   });
 
+  it("sendet keine ungültige optionale PLZ", async () => {
+    const wrapper = mount(HomeView, { global });
+    await inputByLabel(wrapper, "Lidl").setValue(true);
+    await inputByLabel(wrapper, "PLZ").setValue("123");
+    await wrapper.get("button").trigger("click");
+
+    expect(fetchProspects).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Bitte fünfstellige PLZ eingeben oder Feld leeren.");
+  });
+
   it("zeigt geladene Prospekte mit Händlerhinweis an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([
       {
@@ -85,6 +95,29 @@ describe("HomeView", () => {
     expect(wrapper.text()).not.toContain("PLZ_BASIERT");
     expect(wrapper.text()).toContain("Filiale oder PLZ beim Händler wählen.");
     expect(wrapper.html()).toContain("https://www.rewe.de/angebote/nationale-angebote/");
+  });
+
+  it("zeigt minimale Prospect-Objekte ohne erfundene Region an", async () => {
+    vi.mocked(fetchProspects).mockResolvedValue([
+      {
+        id: "lidl",
+        name: "Lidl",
+        prospectUrl: "https://www.lidl.de/c/online-prospekte/s10005610",
+        notice: "Offizieller Prospektlink",
+        requiresLocationContext: false,
+        requiresStoreSelection: false,
+      },
+    ]);
+
+    const wrapper = mount(HomeView, { global });
+    await inputByLabel(wrapper, "Lidl").setValue(true);
+    await wrapper.get("button").trigger("click");
+
+    expect(wrapper.text()).toContain("Lidl");
+    expect(wrapper.text()).toContain("Offizieller Prospektlink");
+    expect(wrapper.text()).not.toContain("Offizieller Prospektlink verfügbar.");
+    expect(wrapper.text()).not.toContain("Region unbekannt");
+    expect(wrapper.html()).toContain("https://www.lidl.de/c/online-prospekte/s10005610");
   });
 
   it("zeigt Fallback-Hinweis mit verständlicher Aldi-Region an", async () => {
