@@ -21,6 +21,7 @@ WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIE
 - Existiert der erwartete Issue-Branch schon lokal, setzt der Loop dort fort.
 - Existiert er nur auf `origin`, legt der Loop einen lokalen Tracking-Branch darauf an.
 - Nur wenn noch kein Issue-Branch existiert, erstellt der Loop ihn neu von `main`.
+- `.codex-loop/issue.md` enthält den Issue-Body und zusätzlich die vorhandenen GitHub-Kommentare.
 - Ein Issue bleibt im Review-Loop, bis der Reviewer `APPROVED` liefert oder `MAX_ROUNDS` erreicht ist.
 - Der Doku-Worker läuft erst nach erfolgreichem Code-Review.
 - Derselbe Reviewer prüft danach mögliche Doku-Änderungen.
