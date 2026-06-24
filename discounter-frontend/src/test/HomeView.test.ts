@@ -9,30 +9,6 @@ vi.mock("../services/api", async (importOriginal) => ({
   fetchProspects: vi.fn(),
 }));
 
-const global = {
-  stubs: {
-    Button: {
-      props: ["label", "loading"],
-      emits: ["click"],
-      template: '<button @click="$emit(\'click\')">{{ label }}</button>',
-    },
-    Checkbox: {
-      props: ["modelValue"],
-      emits: ["update:modelValue"],
-      template: '<input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" />',
-    },
-    InputText: {
-      props: ["modelValue"],
-      emits: ["update:modelValue"],
-      template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-    },
-    Message: { template: "<div><slot /></div>" },
-    ProgressSpinner: { template: "<div>Lädt</div>" },
-    Card: { template: "<article><slot name='title' /><slot name='subtitle' /><slot name='content' /><slot name='footer' /></article>" },
-    Tag: { props: ["value"], template: "<span>{{ value }}</span>" },
-  },
-};
-
 function inputByLabel(wrapper: ReturnType<typeof mount>, labelText: string) {
   const label = wrapper.findAll("label").find((candidate) => candidate.text().includes(labelText));
   expect(label).toBeTruthy();
@@ -53,7 +29,7 @@ describe("HomeView", () => {
   });
 
   it("fordert Standort nur bei standortpflichtiger Auswahl", async () => {
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
 
     expect(wrapper.text()).toContain("Die aktuelle Auswahl braucht Standortkontext.");
 
@@ -63,7 +39,7 @@ describe("HomeView", () => {
   });
 
   it("sendet keine ungültige optionale PLZ", async () => {
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "Lidl").setValue(true);
     await inputByLabel(wrapper, "PLZ").setValue("123");
     await wrapper.get("button").trigger("click");
@@ -85,7 +61,7 @@ describe("HomeView", () => {
       },
     ]);
 
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "PLZ").setValue("65185");
     await wrapper.get("button").trigger("click");
 
@@ -95,6 +71,31 @@ describe("HomeView", () => {
     expect(wrapper.text()).not.toContain("PLZ_BASIERT");
     expect(wrapper.text()).toContain("Filiale oder PLZ beim Händler wählen.");
     expect(wrapper.html()).toContain("https://www.rewe.de/angebote/nationale-angebote/");
+  });
+
+  it("zeigt EDEKA-Angebote und Marktsuche an", async () => {
+    vi.mocked(fetchProspects).mockResolvedValue([
+      {
+        id: "edeka",
+        name: "EDEKA",
+        regionType: "PLZ_BASIERT",
+        urlMode: "LOCATION_RESOLVED",
+        prospectUrl: "https://www.edeka.de/angebote/",
+        marketSearchUrl: "https://www.edeka.de/marktsuche.jsp",
+        requiresLocationContext: true,
+        requiresStoreSelection: true,
+      },
+    ]);
+
+    const wrapper = mount(HomeView);
+    await inputByLabel(wrapper, "PLZ").setValue("65185");
+    await wrapper.get("button").trigger("click");
+
+    expect(wrapper.text()).toContain("EDEKA");
+    expect(wrapper.text()).toContain("Zum Prospekt");
+    expect(wrapper.text()).toContain("Zur Marktsuche");
+    expect(wrapper.html()).toContain("https://www.edeka.de/angebote/");
+    expect(wrapper.html()).toContain("https://www.edeka.de/marktsuche.jsp");
   });
 
   it("zeigt minimale Prospect-Objekte ohne erfundene Region an", async () => {
@@ -109,7 +110,7 @@ describe("HomeView", () => {
       },
     ]);
 
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "Lidl").setValue(true);
     await wrapper.get("button").trigger("click");
 
@@ -117,6 +118,26 @@ describe("HomeView", () => {
     expect(wrapper.text()).toContain("Offizieller Prospektlink");
     expect(wrapper.text()).not.toContain("Offizieller Prospektlink verfügbar.");
     expect(wrapper.text()).not.toContain("Region unbekannt");
+    expect(wrapper.html()).toContain("https://www.lidl.de/c/online-prospekte/s10005610");
+  });
+
+  it("zeigt bei minimalen Prospect-Objekten keinen erfundenen Hinweis an", async () => {
+    vi.mocked(fetchProspects).mockResolvedValue([
+      {
+        id: "lidl",
+        name: "Lidl",
+        prospectUrl: "https://www.lidl.de/c/online-prospekte/s10005610",
+        requiresLocationContext: false,
+        requiresStoreSelection: false,
+      },
+    ]);
+
+    const wrapper = mount(HomeView);
+    await inputByLabel(wrapper, "Lidl").setValue(true);
+    await wrapper.get("button").trigger("click");
+
+    expect(wrapper.text()).toContain("Lidl");
+    expect(wrapper.text()).not.toContain("Offizieller Prospektlink verfügbar.");
     expect(wrapper.html()).toContain("https://www.lidl.de/c/online-prospekte/s10005610");
   });
 
@@ -135,7 +156,7 @@ describe("HomeView", () => {
       },
     ]);
 
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "PLZ").setValue("65185");
     await wrapper.get("button").trigger("click");
 
@@ -158,7 +179,7 @@ describe("HomeView", () => {
       },
     ]);
 
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "PLZ").setValue("65185");
     await wrapper.get("button").trigger("click");
 
@@ -170,7 +191,7 @@ describe("HomeView", () => {
   it("zeigt leere Backend-Erfolge als keine Ergebnisse an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([]);
 
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "PLZ").setValue("65185");
     await wrapper.get("button").trigger("click");
 
@@ -183,7 +204,7 @@ describe("HomeView", () => {
     const fastRequest = deferred<ProspectLink[]>();
     vi.mocked(fetchProspects).mockReturnValueOnce(slowRequest.promise).mockReturnValueOnce(fastRequest.promise);
 
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "PLZ").setValue("65185");
     await wrapper.get("button").trigger("click");
     await inputByLabel(wrapper, "PLZ").setValue("10115");
@@ -235,7 +256,7 @@ describe("HomeView", () => {
       ])
       .mockRejectedValueOnce({ response: { data: { message: "Backend-Fehler" } } });
 
-    const wrapper = mount(HomeView, { global });
+    const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "PLZ").setValue("65185");
     await wrapper.get("button").trigger("click");
     expect(wrapper.text()).toContain("Kaufland");
