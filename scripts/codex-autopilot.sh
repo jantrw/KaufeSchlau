@@ -91,6 +91,18 @@ issue_field() {
   gh issue view "$number" --json "$field" --jq ".${field}"
 }
 
+issue_comments_markdown() {
+  local number="$1"
+
+  gh issue view "$number" --json comments --jq '
+    [
+      .comments[]
+      | select((.body // "") != "")
+      | "### Kommentar von @" + (.author.login // "unknown") + " am " + .createdAt + "\n\n" + .body
+    ] | join("\n\n")
+  '
+}
+
 has_local_branch() {
   local branch="$1"
   git show-ref --verify --quiet "refs/heads/$branch"
@@ -346,6 +358,7 @@ main() {
     title="$(issue_field "$number" title)"
     body="$(issue_field "$number" body)"
     url="$(issue_field "$number" url)"
+    comments="$(issue_comments_markdown "$number")"
 
     branch="codex/issue-${number}-$(slugify "$title")"
 
@@ -363,6 +376,15 @@ URL: $url
 
 $body
 EOF
+
+    if [[ -n "$comments" ]]; then
+      cat >> "$LOOP_DIR/issue.md" <<EOF
+
+## Kommentare
+
+$comments
+EOF
+    fi
 
     gh issue edit "$number" --add-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
 
