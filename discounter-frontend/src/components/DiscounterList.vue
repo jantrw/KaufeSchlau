@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import Message from "primevue/message";
-import ProgressSpinner from "primevue/progressspinner";
 import type { ProspectLink } from "../types";
 import DiscounterCard from "./DiscounterCard.vue";
 
@@ -14,16 +12,16 @@ defineProps<{
 
 <template>
   <section class="results">
-    <ProgressSpinner v-if="loading" aria-label="Prospekte werden geladen" />
-    <Message v-else-if="error" severity="error">{{ error }}</Message>
+    <div v-if="loading" class="spinner" aria-label="Prospekte werden geladen" role="status" />
+    <div v-else-if="error" class="message error">{{ error }}</div>
     <div v-else-if="prospects.length > 0" class="prospect-grid">
       <DiscounterCard v-for="prospect in prospects" :key="prospect.id" :prospect="prospect" />
     </div>
-    <Message v-else-if="hasLoaded" severity="secondary">
+    <div v-else-if="hasLoaded" class="message secondary">
       Keine Prospekte für diese Auswahl gefunden.
-    </Message>
-    <Message v-else severity="secondary">
+    </div>
+    <div v-else class="message secondary">
       Noch keine Prospekte geladen.
-    </Message>
+    </div>
   </section>
 </template>

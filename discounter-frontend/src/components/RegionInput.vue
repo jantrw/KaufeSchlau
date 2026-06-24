@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import InputText from "primevue/inputtext";
-
 defineProps<{
   plz: string;
   region: string;
@@ -11,6 +9,14 @@ const emit = defineEmits<{
   "update:plz": [value: string];
   "update:region": [value: string];
 }>();
+
+function updatePlz(event: Event) {
+  emit("update:plz", (event.target as HTMLInputElement).value.replace(/\D/g, "").slice(0, 5));
+}
+
+function updateRegion(event: Event) {
+  emit("update:region", (event.target as HTMLInputElement).value);
+}
 </script>
 
 <template>
@@ -24,22 +30,18 @@ const emit = defineEmits<{
     <div class="location-grid">
       <label>
         PLZ
-        <InputText
-          :model-value="plz"
+        <input
+          :value="plz"
           inputmode="numeric"
           maxlength="5"
           placeholder="65185"
-          :invalid="plz.length > 0 && !/^\d{5}$/.test(plz)"
-          @update:model-value="emit('update:plz', String($event).replace(/\D/g, '').slice(0, 5))"
+          :aria-invalid="plz.length > 0 && !/^\d{5}$/.test(plz) ? 'true' : 'false'"
+          @input="updatePlz"
         />
       </label>
       <label>
         Region
-        <InputText
-          :model-value="region"
-          placeholder="hessen"
-          @update:model-value="emit('update:region', String($event))"
-        />
+        <input :value="region" placeholder="hessen" @input="updateRegion" />
       </label>
     </div>
 

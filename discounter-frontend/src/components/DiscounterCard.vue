@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import Button from "primevue/button";
-import Card from "primevue/card";
-import Tag from "primevue/tag";
 import type { ProspectLink } from "../types";
 
 defineProps<{
@@ -29,15 +26,24 @@ function regionLabel(prospect: ProspectLink): string | undefined {
   }
   return regionTypeLabels[prospect.regionType];
 }
+
+function hasGenericOfficialHint(prospect: ProspectLink): boolean {
+  return Boolean(
+    !prospect.notice &&
+      !prospect.requiresStoreSelection &&
+      !prospect.fallbackUsed &&
+      (prospect.regionType || prospect.urlMode),
+  );
+}
 </script>
 
 <template>
-  <Card class="prospect-card">
-    <template #title>{{ prospect.name }}</template>
-    <template #subtitle>
-      <Tag v-if="regionLabel(prospect)" :value="regionLabel(prospect)" severity="info" />
-    </template>
-    <template #content>
+  <article class="prospect-card">
+    <header class="prospect-card-header">
+      <h2>{{ prospect.name }}</h2>
+      <span v-if="regionLabel(prospect)" class="tag">{{ regionLabel(prospect) }}</span>
+    </header>
+    <div class="prospect-card-content">
       <p v-if="prospect.notice" class="hint">{{ prospect.notice }}</p>
       <p v-else-if="prospect.requiresStoreSelection" class="hint">
         Filiale oder PLZ beim Händler wählen. KaufeSchlau nutzt aktuell den offiziellen Einstiegspunkt.
@@ -45,12 +51,15 @@ function regionLabel(prospect: ProspectLink): string | undefined {
       <p v-if="prospect.fallbackUsed" class="hint">
         Offizieller Einstiegspunkt angezeigt; konkrete Wochenauflösung folgt später.
       </p>
-      <p v-if="!prospect.notice && !prospect.requiresStoreSelection && !prospect.fallbackUsed" class="hint">
+      <p v-if="hasGenericOfficialHint(prospect)" class="hint">
         Offizieller Prospektlink verfügbar.
       </p>
-    </template>
-    <template #footer>
-      <Button as="a" :href="prospect.prospectUrl" target="_blank" rel="noopener" label="Zum Prospekt" />
-    </template>
-  </Card>
+    </div>
+    <div class="prospect-card-actions">
+      <a class="button-link" :href="prospect.prospectUrl" target="_blank" rel="noopener">Zum Prospekt</a>
+      <a v-if="prospect.marketSearchUrl" class="button-link secondary" :href="prospect.marketSearchUrl" target="_blank" rel="noopener">
+        Zur Marktsuche
+      </a>
+    </div>
+  </article>
 </template>

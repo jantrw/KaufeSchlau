@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Checkbox from "primevue/checkbox";
 import type { Retailer } from "../types";
 
 defineProps<{
@@ -11,7 +10,8 @@ const emit = defineEmits<{
   "update:selectedIds": [value: string[]];
 }>();
 
-function toggle(id: string, checked: boolean, selectedIds: string[]) {
+function toggle(id: string, event: Event, selectedIds: string[]) {
+  const checked = (event.target as HTMLInputElement).checked;
   emit("update:selectedIds", checked ? [...selectedIds, id] : selectedIds.filter((selected) => selected !== id));
 }
 </script>
@@ -25,11 +25,7 @@ function toggle(id: string, checked: boolean, selectedIds: string[]) {
 
     <div class="retailer-grid">
       <label v-for="retailer in retailers" :key="retailer.id" class="retailer-option">
-        <Checkbox
-          :model-value="selectedIds.includes(retailer.id)"
-          binary
-          @update:model-value="toggle(retailer.id, Boolean($event), selectedIds)"
-        />
+        <input type="checkbox" :checked="selectedIds.includes(retailer.id)" @change="toggle(retailer.id, $event, selectedIds)" />
         <span>
           {{ retailer.name }}
           <small v-if="retailer.requiresLocationContext">Standort nötig</small>

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import Button from "primevue/button";
-import Message from "primevue/message";
 import { computed, ref } from "vue";
 import DiscounterList from "../components/DiscounterList.vue";
 import RegionInput from "../components/RegionInput.vue";
@@ -84,14 +82,16 @@ async function loadProspects() {
     <RetailerFilter v-model:selected-ids="selectedIds" :retailers="retailers" />
     <RegionInput v-model:plz="plz" v-model:region="region" :required="locationRequired" />
 
-    <Message v-if="locationRequired" severity="warn">
+    <div v-if="locationRequired" class="message warn">
       Die aktuelle Auswahl braucht Standortkontext.
-    </Message>
-    <Message v-else severity="success">
+    </div>
+    <div v-else class="message success">
       Diese Händler können ohne PLZ oder Region geladen werden.
-    </Message>
+    </div>
 
-    <Button label="Prospekte laden" :loading="loading" @click="loadProspects" />
+    <button class="primary-button" :aria-busy="loading ? 'true' : 'false'" @click="loadProspects">
+      {{ loading ? "Lädt..." : "Prospekte laden" }}
+    </button>
     <DiscounterList :prospects="prospects" :loading="loading" :error="error" :has-loaded="hasLoaded" />
   </main>
 </template>
