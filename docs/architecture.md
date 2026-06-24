@@ -13,3 +13,4 @@ Die Issue-Auswahl erfolgt nach aufsteigender Issue-Nummer innerhalb der offenen 
 Existiert zu einem Issue bereits ein lokaler oder Remote-Branch, verwendet der Loop diesen weiter statt ihn neu von `main` aufzusetzen.
 `issue.md` enthält neben Titel, URL und Body auch die vorhandenen GitHub-Issue-Kommentare als zusätzlichen Arbeitskontext.
 `MAX_ROUNDS` begrenzt die Zahl der Review-Änderungsschleifen; ein letzter Fix erhält noch eine abschließende Reviewer-Prüfung.
+Ein Resume-Lauf kann einen fehlenden PR nachholen, wenn auf dem Issue-Branch bereits ein fachlicher Diff gegen `main` existiert.

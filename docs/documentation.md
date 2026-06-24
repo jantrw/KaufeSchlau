@@ -27,6 +27,7 @@ WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIE
 - Derselbe Reviewer prüft danach mögliche Doku-Änderungen.
 - Wenn keine Doku-Änderung nötig ist, meldet der Doku-Worker `DOCS_UNCHANGED`.
 - Bei `PUSH=true` werden Branch und Pull Request erstellt und das Issue danach geschlossen.
+- Wenn in einem Resume-Lauf kein neuer Commit entsteht, der Branch aber bereits einen echten Diff gegen `main` hat, erstellt der Loop den fehlenden PR trotzdem.
 - Modell und Reasoning-Level werden getrennt gesetzt; `gpt-5.5-medium` ist kein einzelner Modell-Slug.
 - `.codex-loop/` ist versioniert, wird beim Clean-Check ignoriert und zusammen mit echten Issue-Änderungen in Branch und PR mitgeführt.
 - Ein reiner `.codex-loop`-Diff reicht nicht für Commit, PR oder Issue-Abschluss.
