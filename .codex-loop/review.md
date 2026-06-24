@@ -1,3 +1,1 @@
-CHANGES_REQUESTED:
-- `pom.xml`, `discounter-cli/**` und `discounter-backend/src/main/java/de/kaufeschlau/discounter/controller/ProspectController.java` samt Test sind aktuell untracked. Im tatsächlichen Diff gegen `main` fehlen damit genau die CLI-/REST-Änderungen, die Issue #3 verlangt; übrig bleiben nur POM- und Resolver-Anpassungen, also ist das Issue so nicht erfüllt.
-- Die CLI-Tests decken den explizit geforderten Fehlerfall `unbekannte Händler-ID` nicht ab. `ListCommandTest` prüft nur `LOCATION_REQUIRED` und `Backend nicht erreichbar`; damit bleibt unbewiesen, dass die CLI `UNKNOWN_DISCOUNTER` verständlich ausgibt.
+APPROVED

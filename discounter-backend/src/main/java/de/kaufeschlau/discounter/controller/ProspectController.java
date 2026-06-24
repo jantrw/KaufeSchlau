@@ -49,7 +49,7 @@ public class ProspectController {
 
         AldiRegion aldiRegion;
         try {
-            aldiRegion = selectedIds.isEmpty() ? aldiRegion(plz, region) : null;
+            aldiRegion = aldiRegion(plz, region);
         } catch (IllegalArgumentException e) {
             return badRequest("INVALID_LOCATION", e.getMessage());
         }

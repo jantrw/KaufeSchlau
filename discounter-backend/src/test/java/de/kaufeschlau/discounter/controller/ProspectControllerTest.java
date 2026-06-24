@@ -38,6 +38,22 @@ class ProspectControllerTest {
     }
 
     @Test
+    void rejectsExplicitSelectionWithInvalidPlz() throws Exception {
+        mvc.perform(get("/api/v1/prospects").param("retailerIds", "rewe").param("plz", "1234"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_LOCATION"))
+                .andExpect(jsonPath("$.message", containsString("PLZ muss fünfstellig numerisch sein")));
+    }
+
+    @Test
+    void rejectsExplicitSelectionWithUnknownRegion() throws Exception {
+        mvc.perform(get("/api/v1/prospects").param("retailerIds", "lidl").param("region", "foo"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_LOCATION"))
+                .andExpect(jsonPath("$.message", containsString("Region ist unbekannt")));
+    }
+
+    @Test
     void filtersAutomaticAldiRegionByPlz() throws Exception {
         mvc.perform(get("/api/v1/prospects").param("plz", "65185"))
                 .andExpect(status().isOk())

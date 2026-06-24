@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -49,7 +51,11 @@ public class ListCommand implements Callable<Integer> {
     }
 
     ListCommand(String backendUrl, PrintWriter out, PrintWriter err) {
-        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build(), backendUrl, out, err);
+    }
+
+    ListCommand(HttpClient httpClient, String backendUrl, PrintWriter out, PrintWriter err) {
+        this.httpClient = httpClient;
         this.backendUrl = backendUrl;
         this.out = out;
         this.err = err;
@@ -66,10 +72,11 @@ public class ListCommand implements Callable<Integer> {
 
             err.println(errorMessage(response.statusCode(), response.body()));
             return 1;
-        } catch (ConnectException e) {
-            err.println("Backend nicht erreichbar: " + backendUrl);
-            return 1;
         } catch (IOException e) {
+            if (isUnreachableBackend(e)) {
+                err.println("Backend nicht erreichbar: " + backendUrl);
+                return 1;
+            }
             err.println("Backend-Aufruf fehlgeschlagen: " + e.getMessage());
             return 1;
         } catch (InterruptedException e) {
@@ -77,6 +84,12 @@ public class ListCommand implements Callable<Integer> {
             err.println("Backend-Aufruf abgebrochen.");
             return 1;
         }
+    }
+
+    private static boolean isUnreachableBackend(IOException e) {
+        return e instanceof ConnectException
+                || e instanceof UnknownHostException
+                || e instanceof HttpConnectTimeoutException;
     }
 
     private HttpRequest request() {
