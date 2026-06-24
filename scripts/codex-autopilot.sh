@@ -113,6 +113,19 @@ has_remote_branch() {
   git show-ref --verify --quiet "refs/remotes/origin/$branch"
 }
 
+branch_has_diff_against_base() {
+  local branch="$1"
+  local merge_base
+
+  merge_base="$(git merge-base "$BASE_BRANCH" "$branch")"
+  ! git diff --quiet "$merge_base" "$branch"
+}
+
+pr_exists_for_branch() {
+  local branch="$1"
+  gh pr list --head "$branch" --state all --json number --jq 'length > 0'
+}
+
 checkout_issue_branch() {
   local branch="$1"
 
@@ -494,6 +507,17 @@ EOF
       echo "No changes to commit for issue #$number."
       git reset --quiet HEAD -- "$LOOP_DIR" >/dev/null 2>&1 || true
       git checkout -- "$LOOP_DIR" >/dev/null 2>&1 || true
+
+      if [[ "$PUSH" == "true" ]] && branch_has_diff_against_base "$branch" && [[ "$(pr_exists_for_branch "$branch")" != "true" ]]; then
+        git push -u origin "$branch"
+        gh pr create \
+          --title "Fix #$number: $title" \
+          --body "Automated Codex worker/reviewer/doc loop for #$number." \
+          --base "$BASE_BRANCH" \
+          --head "$branch"
+        gh issue close "$number" --comment "Geschlossen nach automatischer PR-Erstellung für #$number."
+      fi
+
       gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
       gh issue edit "$number" --add-label "$REVIEWED_LABEL" >/dev/null 2>&1 || true
       processed=$((processed + 1))
