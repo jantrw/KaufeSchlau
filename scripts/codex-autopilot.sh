@@ -397,8 +397,9 @@ EOF
     fi
 
     round=1
+    code_change_rounds=0
 
-    while [[ "$round" -le "$MAX_ROUNDS" ]]; do
+    while true; do
       echo
       echo "--- Code review round $round for issue #$number ---"
 
@@ -410,6 +411,12 @@ EOF
       fi
 
       if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
+        if [[ "$code_change_rounds" -ge "$MAX_ROUNDS" ]]; then
+          echo "Max code review rounds reached for issue #$number."
+          mark_issue_blocked "$number" "$LOOP_DIR/review.md"
+          exit 1
+        fi
+
         echo "Reviewer requested code changes. Worker continues."
         run_worker_fix
 
@@ -419,6 +426,7 @@ EOF
           exit 1
         fi
 
+        code_change_rounds=$((code_change_rounds + 1))
         round=$((round + 1))
         continue
       fi
@@ -427,12 +435,6 @@ EOF
       cat "$LOOP_DIR/review.md"
       exit 1
     done
-
-    if [[ "$round" -gt "$MAX_ROUNDS" ]]; then
-      echo "Max code review rounds reached for issue #$number."
-      mark_issue_blocked "$number" "$LOOP_DIR/review.md"
-      exit 1
-    fi
 
     run_doc_worker_initial
 
@@ -446,8 +448,9 @@ EOF
       echo "Doc worker reports no documentation changes needed."
     else
       doc_round=1
+      doc_change_rounds=0
 
-      while [[ "$doc_round" -le "$MAX_ROUNDS" ]]; do
+      while true; do
         echo
         echo "--- Doc review round $doc_round for issue #$number ---"
 
@@ -459,6 +462,12 @@ EOF
         fi
 
         if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
+          if [[ "$doc_change_rounds" -ge "$MAX_ROUNDS" ]]; then
+            echo "Max doc review rounds reached for issue #$number."
+            mark_issue_blocked "$number" "$LOOP_DIR/review.md"
+            exit 1
+          fi
+
           echo "Reviewer requested doc changes. Doc worker continues."
           run_doc_worker_fix
 
@@ -468,6 +477,7 @@ EOF
             exit 1
           fi
 
+          doc_change_rounds=$((doc_change_rounds + 1))
           doc_round=$((doc_round + 1))
           continue
         fi
@@ -476,12 +486,6 @@ EOF
         cat "$LOOP_DIR/review.md"
         exit 1
       done
-
-      if [[ "$doc_round" -gt "$MAX_ROUNDS" ]]; then
-        echo "Max doc review rounds reached for issue #$number."
-        mark_issue_blocked "$number" "$LOOP_DIR/review.md"
-        exit 1
-      fi
     fi
 
     git add -A
