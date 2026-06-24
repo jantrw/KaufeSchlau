@@ -54,6 +54,38 @@ class ListCommandBackendIntegrationTest {
     }
 
     @Test
+    void listCommandPrintsUnknownDiscounterFromRealBackend() {
+        var out = new StringWriter();
+        var err = new StringWriter();
+        var command = new ListCommand(
+                "http://localhost:" + port,
+                new PrintWriter(out, true),
+                new PrintWriter(err, true));
+
+        var exitCode = new CommandLine(command).execute("--region", "hessen", "--id", "netto");
+
+        assertEquals(1, exitCode);
+        assertEquals("", out.toString());
+        assertTrue(err.toString().contains("UNKNOWN_DISCOUNTER: Unbekannter Händler: netto"));
+    }
+
+    @Test
+    void listCommandPrintsInvalidLocationFromRealBackend() {
+        var out = new StringWriter();
+        var err = new StringWriter();
+        var command = new ListCommand(
+                "http://localhost:" + port,
+                new PrintWriter(out, true),
+                new PrintWriter(err, true));
+
+        var exitCode = new CommandLine(command).execute("--region", "foo", "--id", "lidl");
+
+        assertEquals(1, exitCode);
+        assertEquals("", out.toString());
+        assertTrue(err.toString().contains("INVALID_LOCATION: Region ist unbekannt"));
+    }
+
+    @Test
     void listCommandPrintsJsonFromRealBackend() throws Exception {
         var out = new StringWriter();
         var err = new StringWriter();
