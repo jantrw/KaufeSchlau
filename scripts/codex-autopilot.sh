@@ -91,6 +91,18 @@ issue_field() {
   gh issue view "$number" --json "$field" --jq ".${field}"
 }
 
+issue_comments_markdown() {
+  local number="$1"
+
+  gh issue view "$number" --json comments --jq '
+    [
+      .comments[]
+      | select((.body // "") != "")
+      | "### Kommentar von @" + (.author.login // "unknown") + " am " + .createdAt + "\n\n" + .body
+    ] | join("\n\n")
+  '
+}
+
 has_local_branch() {
   local branch="$1"
   git show-ref --verify --quiet "refs/heads/$branch"
@@ -99,6 +111,28 @@ has_local_branch() {
 has_remote_branch() {
   local branch="$1"
   git show-ref --verify --quiet "refs/remotes/origin/$branch"
+}
+
+branch_has_diff_against_base() {
+  local branch="$1"
+  local merge_base
+
+  merge_base="$(git merge-base "$BASE_BRANCH" "$branch")"
+  ! git diff --quiet "$merge_base" "$branch"
+}
+
+pr_exists_for_branch() {
+  local branch="$1"
+  gh pr list --head "$branch" --state all --json number --jq 'length > 0'
+}
+
+branch_requires_docs() {
+  local branch="$1"
+  local merge_base
+
+  merge_base="$(git merge-base "$BASE_BRANCH" "$branch")"
+  git diff --name-only "$merge_base" "$branch" | grep -Eq \
+    '^(discounter-backend/src/main/|discounter-backend/src/main/resources/|discounter-cli/src/main/|discounter-frontend/src/|docker-compose\.yml)$'
 }
 
 checkout_issue_branch() {
@@ -234,16 +268,22 @@ $issue-worker
 Lies .codex-loop/issue.md, .codex-loop/worker.md und den aktuellen Git-Diff.
 
 Deine Aufgabe:
-- Prüfe nur `README.md`, `docs/architecture.md` und `docs/documentation.md`.
-- Erstelle fehlende Dateien nur, wenn sie für die aktuelle Änderung nötig sind.
+- Bearbeite nur `discounter-backend/README.md`, `discounter-cli/README.md`, `discounter-frontend/README.md`, `docs/architecture.md` und `docs/documentation.md`.
+- Die Root-`README.md` bleibt tabu.
+- Bei neuen Features oder neuen Lauf-/Testwegen in Backend, CLI oder Frontend ist Doku Pflicht.
+- Modul-READMEs: nur modulnahes Setup, lokale Startbefehle, Testbefehle und schneller Einstieg.
+- `docs/architecture.md`: nur Modulgrenzen, Verantwortlichkeiten, Integrationsfluss und technische Entscheidungen.
+- `docs/documentation.md`: nur API-, CLI- und UI-Verhalten, Validierung, Hinweise und Nutzungsbeispiele.
+- Schreibe nichts doppelt. Wenn ein Punkt in eine Datei gehört, erwähne ihn in den anderen Dateien höchstens kurz oder gar nicht.
 - Dokumentiere nur reale Verhaltens-, Architektur- oder Nutzungsänderungen.
-- Keine allgemeinen Umschreibungen, kein Doku-Refactor.
+- Reine Dependency-, Build- oder Lockfile-Änderungen ohne neue Bedien- oder Laufauswirkung brauchen keine Doku.
+- Keine allgemeinen Umschreibungen, kein Doku-Refactor, kein Fülltext.
 - Führe nach Doku-Änderungen einen kurzen Self-Check auf Konsistenz mit dem Diff durch.
 
 Wenn Doku angepasst wurde:
 - schreibe am Ende exakt `READY_FOR_REVIEW`.
 
-Wenn keine Doku-Änderung nötig ist:
+Wenn wirklich keine Doku-Änderung nötig ist:
 - schreibe am Ende exakt `DOCS_UNCHANGED`.
 
 Wenn blockiert:
@@ -266,8 +306,9 @@ Lies .codex-loop/issue.md, .codex-loop/worker.md und .codex-loop/review.md.
 
 Wenn dort CHANGES_REQUESTED steht:
 - Setze alle Doku-Review-Punkte um.
-- Bearbeite nur `README.md`, `docs/architecture.md` und `docs/documentation.md`.
+- Bearbeite nur `discounter-backend/README.md`, `discounter-cli/README.md`, `discounter-frontend/README.md`, `docs/architecture.md` und `docs/documentation.md`.
 - Halte die Doku knapp und deckungsgleich mit dem Code-Diff.
+- Entferne doppelte Aussagen zwischen README, Architektur und Nutzungsdoku statt sie umzuschreiben.
 - Führe einen kurzen Self-Check auf Konsistenz mit dem Diff durch.
 - Schreibe am Ende exakt `READY_FOR_REVIEW`.
 
@@ -295,10 +336,15 @@ Kontext:
 - Doku-Worker-Zusammenfassung steht in .codex-loop/doc-worker.md.
 
 Prüfe:
-- Sind `README.md`, `docs/architecture.md` und `docs/documentation.md` korrekt zum tatsächlichen Code-Diff?
+- Sind die geänderten Modul-READMEs sowie `docs/architecture.md` und `docs/documentation.md` korrekt zum tatsächlichen Code-Diff?
+- Fehlt bei neuen Features oder neuen Run-/Testwegen die passende Modul-README oder eine der beiden Doku-Dateien?
+- Bleibt die Root-`README.md` unberührt?
+- Ist jede Modul-README auf Setup/Run/Test fokussiert statt Architektur oder Feature-Details zu wiederholen?
+- Ist `docs/architecture.md` nur Architektur und nicht Nutzungsdoku in anderem Wortlaut?
+- Ist `docs/documentation.md` nur Verhalten/Nutzung und nicht Architektur oder README-Duplikat?
 - Fehlt eine wichtige Nutzungs- oder Architekturinfo?
 - Enthält die Doku Behauptungen, die der Code nicht erfüllt?
-- Ist die Änderung knapp statt aufgebläht?
+- Ist die Änderung knapp statt aufgebläht oder doppelt?
 
 Wichtig:
 - Nicht schreiben.
@@ -346,6 +392,7 @@ main() {
     title="$(issue_field "$number" title)"
     body="$(issue_field "$number" body)"
     url="$(issue_field "$number" url)"
+    comments="$(issue_comments_markdown "$number")"
 
     branch="codex/issue-${number}-$(slugify "$title")"
 
@@ -364,6 +411,15 @@ URL: $url
 $body
 EOF
 
+    if [[ -n "$comments" ]]; then
+      cat >> "$LOOP_DIR/issue.md" <<EOF
+
+## Kommentare
+
+$comments
+EOF
+    fi
+
     gh issue edit "$number" --add-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
 
     run_worker_initial
@@ -375,8 +431,9 @@ EOF
     fi
 
     round=1
+    code_change_rounds=0
 
-    while [[ "$round" -le "$MAX_ROUNDS" ]]; do
+    while true; do
       echo
       echo "--- Code review round $round for issue #$number ---"
 
@@ -388,6 +445,12 @@ EOF
       fi
 
       if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
+        if [[ "$code_change_rounds" -ge "$MAX_ROUNDS" ]]; then
+          echo "Max code review rounds reached for issue #$number."
+          mark_issue_blocked "$number" "$LOOP_DIR/review.md"
+          exit 1
+        fi
+
         echo "Reviewer requested code changes. Worker continues."
         run_worker_fix
 
@@ -397,6 +460,7 @@ EOF
           exit 1
         fi
 
+        code_change_rounds=$((code_change_rounds + 1))
         round=$((round + 1))
         continue
       fi
@@ -405,12 +469,6 @@ EOF
       cat "$LOOP_DIR/review.md"
       exit 1
     done
-
-    if [[ "$round" -gt "$MAX_ROUNDS" ]]; then
-      echo "Max code review rounds reached for issue #$number."
-      mark_issue_blocked "$number" "$LOOP_DIR/review.md"
-      exit 1
-    fi
 
     run_doc_worker_initial
 
@@ -421,11 +479,22 @@ EOF
     fi
 
     if grep -q "DOCS_UNCHANGED" "$LOOP_DIR/doc-worker.md"; then
+      if branch_requires_docs "$branch"; then
+        echo "Doc worker skipped required documentation for issue #$number."
+        cat > "$LOOP_DIR/review.md" <<'EOF'
+CHANGES_REQUESTED:
+- Für diesen Diff ist Doku Pflicht. Ergänze die passende Modul-README für Setup/Run/Test sowie die nötigen Architektur-/Nutzungsdetails in docs/architecture.md und docs/documentation.md ohne doppelte Aussagen.
+EOF
+        mark_issue_blocked "$number" "$LOOP_DIR/review.md"
+        exit 1
+      fi
+
       echo "Doc worker reports no documentation changes needed."
     else
       doc_round=1
+      doc_change_rounds=0
 
-      while [[ "$doc_round" -le "$MAX_ROUNDS" ]]; do
+      while true; do
         echo
         echo "--- Doc review round $doc_round for issue #$number ---"
 
@@ -437,6 +506,12 @@ EOF
         fi
 
         if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
+          if [[ "$doc_change_rounds" -ge "$MAX_ROUNDS" ]]; then
+            echo "Max doc review rounds reached for issue #$number."
+            mark_issue_blocked "$number" "$LOOP_DIR/review.md"
+            exit 1
+          fi
+
           echo "Reviewer requested doc changes. Doc worker continues."
           run_doc_worker_fix
 
@@ -446,6 +521,7 @@ EOF
             exit 1
           fi
 
+          doc_change_rounds=$((doc_change_rounds + 1))
           doc_round=$((doc_round + 1))
           continue
         fi
@@ -454,12 +530,6 @@ EOF
         cat "$LOOP_DIR/review.md"
         exit 1
       done
-
-      if [[ "$doc_round" -gt "$MAX_ROUNDS" ]]; then
-        echo "Max doc review rounds reached for issue #$number."
-        mark_issue_blocked "$number" "$LOOP_DIR/review.md"
-        exit 1
-      fi
     fi
 
     git add -A
@@ -468,6 +538,17 @@ EOF
       echo "No changes to commit for issue #$number."
       git reset --quiet HEAD -- "$LOOP_DIR" >/dev/null 2>&1 || true
       git checkout -- "$LOOP_DIR" >/dev/null 2>&1 || true
+
+      if [[ "$PUSH" == "true" ]] && branch_has_diff_against_base "$branch" && [[ "$(pr_exists_for_branch "$branch")" != "true" ]]; then
+        git push -u origin "$branch"
+        gh pr create \
+          --title "Fix #$number: $title" \
+          --body "Automated Codex worker/reviewer/doc loop for #$number." \
+          --base "$BASE_BRANCH" \
+          --head "$branch"
+        gh issue close "$number" --comment "Geschlossen nach automatischer PR-Erstellung für #$number."
+      fi
+
       gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
       gh issue edit "$number" --add-label "$REVIEWED_LABEL" >/dev/null 2>&1 || true
       processed=$((processed + 1))
