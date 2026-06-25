@@ -1,36 +1,60 @@
 # Dokumentation
 
-## Nutzung des Autopilot-Skripts
+## REST-Endpunkte
 
-Start:
+Alle Prospekte:
 
-```bash
-./scripts/codex-autopilot.sh
+```text
+GET /api/v1/prospects
 ```
 
-Beispiel mit expliziten Modellen:
+Einzelner Händler:
 
-```bash
-WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4-mini DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
+```text
+GET /api/v1/prospects/{id}
 ```
 
-### Verhalten
+## Unterstützte Parameter
 
-- Wenn mehrere passende Issues offen sind, wird immer die kleinste Issue-Nummer zuerst genommen.
-- Issues mit `codex-blocked`, `codex-in-progress` oder `codex-reviewed` werden übersprungen.
-- Ein Issue bleibt im Review-Loop, bis der Reviewer `APPROVED` liefert oder `MAX_ROUNDS` erreicht ist.
-- Der Doku-Worker läuft erst nach erfolgreichem Code-Review.
-- Derselbe Reviewer prüft danach mögliche Doku-Änderungen.
-- Wenn keine Doku-Änderung nötig ist, meldet der Doku-Worker `DOCS_UNCHANGED`.
-- Bei `PUSH=true` werden Branch und Pull Request erstellt und das Issue danach geschlossen.
-- Modell und Reasoning-Level werden getrennt gesetzt; `gpt-5.5-medium` ist kein einzelner Modell-Slug.
-- `.codex-loop/` ist versioniert, wird beim Clean-Check ignoriert und zusammen mit echten Issue-Änderungen in Branch und PR mitgeführt.
-- Ein reiner `.codex-loop`-Diff reicht nicht für Commit, PR oder Issue-Abschluss.
+- `plz`
+  - fünfstellige Postleitzahl
+- `region`
+  - Region oder Bundesland für die Phase-1-Auflösung
+- `retailerIds`
+  - kommaseparierte Händler-IDs
 
-### Abbruchfälle
+## Verhalten
 
-- Dirty Working Tree vor Start
-- fehlende CLI-Tools
-- Worker oder Doku-Worker meldet `BLOCKED`
-- Reviewer-Ausgabe entspricht nicht dem erwarteten Format
-- maximale Review-Runden erreicht
+- Ohne Händlerfilter liefert das Backend alle Händler zurück, soweit die Standortregeln erfüllt sind.
+- Händler mit Standortpflicht verlangen `plz` oder `region`.
+- Aldi Nord und Aldi Süd werden bei passender Anfrage anhand von PLZ oder Region gefiltert.
+- Für standortabhängige Händler liefert Phase 1 nur den offiziellen Einstiegspunkt plus Hinweis auf spätere Auflösung.
+
+## Fehlerfälle
+
+- `400 LOCATION_REQUIRED`
+  - Standortkontext fehlt für die gewählte Händlerauswahl
+- `400 INVALID_REQUEST`
+  - PLZ oder Region ist fachlich ungültig
+- `404 RETAILER_NOT_FOUND`
+  - angefragte Händler-ID existiert nicht
+
+## Beispielaufrufe
+
+Alle Händler mit PLZ:
+
+```bash
+curl "http://localhost:8080/api/v1/prospects?plz=65185"
+```
+
+Gefilterte Händler:
+
+```bash
+curl "http://localhost:8080/api/v1/prospects?retailerIds=lidl,rewe&plz=65185"
+```
+
+Einzelner Händler:
+
+```bash
+curl "http://localhost:8080/api/v1/prospects/lidl"
+```
