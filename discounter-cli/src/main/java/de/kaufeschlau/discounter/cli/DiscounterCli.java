@@ -5,7 +5,7 @@ import picocli.CommandLine.Command;
 
 @Command(
         name = "discounter",
-        description = "CLI fuer Prospektabfragen gegen das KaufeSchlau-Backend.",
+        description = "CLI für Prospektabfragen gegen das KaufeSchlau-Backend.",
         mixinStandardHelpOptions = true,
         subcommands = ListCommand.class)
 public class DiscounterCli implements Runnable {

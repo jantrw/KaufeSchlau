@@ -33,16 +33,16 @@ public class ListCommand implements Callable<Integer> {
     private final PrintWriter out;
     private final PrintWriter err;
 
-    @Option(names = "--plz", description = "Fuenfstellige Postleitzahl fuer standortabhaengige Haendler.")
+    @Option(names = "--plz", description = "Fünfstellige Postleitzahl für standortabhängige Händler.")
     String plz;
 
     @Option(names = "--region", description = "Region oder Bundesland als Alternative zur PLZ.")
     String region;
 
-    @Option(names = "--id", description = "Einzelne Haendler-ID.")
+    @Option(names = "--id", description = "Einzelne Händler-ID.")
     String id;
 
-    @Option(names = "--ids", split = ",", description = "Mehrere Haendler-IDs als CSV, zum Beispiel lidl,penny.")
+    @Option(names = "--ids", split = ",", description = "Mehrere Händler-IDs als CSV, zum Beispiel lidl,penny.")
     List<String> ids = new ArrayList<>();
 
     @Option(names = "--format", defaultValue = "plain", description = "Ausgabeformat: ${COMPLETION-CANDIDATES}.")

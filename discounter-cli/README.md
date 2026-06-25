@@ -2,7 +2,7 @@
 
 ## Zweck
 
-Java-CLI fuer Prospektabfragen gegen das lokale KaufeSchlau-Backend.
+Java-CLI für Prospektabfragen gegen das lokale KaufeSchlau-Backend.
 
 ## Voraussetzungen
 
