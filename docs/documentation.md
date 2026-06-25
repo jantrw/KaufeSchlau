@@ -8,6 +8,8 @@ Der Branch führt den Befehl `list` ein:
 list [--plz <plz>] [--region <region>] [--id <id>] [--ids <id1,id2>] [--format plain|json]
 ```
 
+Die CLI zeigt die verfügbare Struktur auch direkt per `discounter --help` und `discounter list --help`.
+
 ## Parameter
 
 - `--plz`
