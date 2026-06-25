@@ -1,35 +1,56 @@
 # KaufeSchlau
 
-## Codex Autopilot
+## Überblick
 
-Das Skript `scripts/codex-autopilot.sh` verarbeitet offene GitHub-Issues in einem festen Loop.
-
-`.codex-loop/` ist bewusst versioniert. Der Ordner zeigt den letzten lokalen Loop-Stand, blockiert den Loop-Start nicht und wird zusammen mit echten Issue-Änderungen in Branch und PR mitgeführt.
-
-Beispiel:
-
-```bash
-WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4-mini DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
-```
-```bash
-git checkout main
-git pull --ff-only origin main
-
-$env:PUSH="true"
-$env:WORKER_MODEL="gpt-5.5"
-$env:WORKER_REASONING_EFFORT="medium"
-$env:REVIEWER_MODEL="gpt-5.4"
-$env:REVIEWER_REASONING_EFFORT="medium"
-$env:DOC_WORKER_MODEL="gpt-5.4-mini"
-$env:DOC_WORKER_REASONING_EFFORT="low"
-
-& "C:\Program Files\Git\bin\bash.exe" "A:\Development\KaufeSchlau\scripts\codex-autopilot.sh"
-```
+Dieser Stand enthält das Phase-1-Backend und eine Java-CLI für Prospektabfragen über das Backend.
 
 ## Voraussetzungen
 
-- `git`
-- `gh`
-- `codex` o. Ä.
-- sauberer Working Tree vor Start
-- Zum automatischen Schließen muss `PUSH=true` gesetzt sein, weil das Issue erst nach PR-Erstellung geschlossen wird.
+- Java 21
+- Maven 3.9+
+
+## Tests ausführen
+
+Alle Maven-Tests:
+
+```bash
+mvn test
+```
+
+Nur CLI-Tests:
+
+```bash
+mvn -pl discounter-cli test
+```
+
+## Backend lokal starten
+
+```bash
+mvn -pl discounter-backend spring-boot:run
+```
+
+Backend-URL:
+
+```text
+http://localhost:8080
+```
+
+## CLI bauen und ausführen
+
+CLI-JAR bauen:
+
+```bash
+mvn -pl discounter-cli package
+```
+
+CLI gegen lokales Backend:
+
+```bash
+java -jar discounter-cli/target/discounter-cli-0.1.0-SNAPSHOT.jar list --plz 65185
+```
+
+Alternative Backend-URL:
+
+```bash
+BACKEND_URL=http://localhost:8081 java -jar discounter-cli/target/discounter-cli-0.1.0-SNAPSHOT.jar list --id lidl
+```
