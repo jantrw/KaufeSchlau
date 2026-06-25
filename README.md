@@ -1,64 +1,21 @@
 # KaufeSchlau
 
-## Überblick
+## Codex Autopilot
 
-Dieser Stand enthält das Phase-1-Backend und ein Vue-Frontend für Prospektabfragen.
+Das Skript `scripts/codex-autopilot.sh` verarbeitet offene GitHub-Issues in einem festen Loop.
+
+`.codex-loop/` ist bewusst versioniert. Der Ordner zeigt den letzten lokalen Loop-Stand, blockiert den Loop-Start nicht und wird zusammen mit echten Issue-Änderungen in Branch und PR mitgeführt.
+
+Beispiel:
+
+```bash
+WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4-mini DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
+```
 
 ## Voraussetzungen
 
-- Java 21
-- Maven 3.9+
-- Node.js 20+
-- npm 10+
-
-## Backend lokal starten
-
-```bash
-mvn -f discounter-backend/pom.xml spring-boot:run
-```
-
-Backend-URL:
-
-```text
-http://localhost:8080
-```
-
-## Frontend lokal starten
-
-Abhängigkeiten installieren:
-
-```bash
-npm --prefix discounter-frontend install
-```
-
-Dev-Server starten:
-
-```bash
-npm --prefix discounter-frontend run dev
-```
-
-Frontend-URL:
-
-```text
-http://localhost:5173
-```
-
-## Tests und Build
-
-Backend-Tests:
-
-```bash
-mvn -f discounter-backend/pom.xml test
-```
-
-Frontend-Tests:
-
-```bash
-npm --prefix discounter-frontend run test
-```
-
-Frontend-Typecheck und Production-Build:
-
-```bash
-npm --prefix discounter-frontend run build
-```
+- `git`
+- `gh`
+- `codex` o. Ä.
+- sauberer Working Tree vor Start
+- Zum automatischen Schließen muss `PUSH=true` gesetzt sein, weil das Issue erst nach PR-Erstellung geschlossen wird.
