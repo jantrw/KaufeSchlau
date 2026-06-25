@@ -126,6 +126,15 @@ pr_exists_for_branch() {
   gh pr list --head "$branch" --state all --json number --jq 'length > 0'
 }
 
+branch_requires_docs() {
+  local branch="$1"
+  local merge_base
+
+  merge_base="$(git merge-base "$BASE_BRANCH" "$branch")"
+  git diff --name-only "$merge_base" "$branch" | grep -Eq \
+    '^(discounter-backend/src/main/|discounter-backend/src/main/resources/|discounter-cli/src/main/|discounter-frontend/src/(components|services|views|main\.ts|App\.vue|style\.css|types/)|discounter-frontend/package\.json|discounter-frontend/package-lock\.json|discounter-backend/pom\.xml|discounter-cli/pom\.xml|pom\.xml|docker-compose\.yml)$'
+}
+
 checkout_issue_branch() {
   local branch="$1"
 
@@ -259,16 +268,20 @@ $issue-worker
 Lies .codex-loop/issue.md, .codex-loop/worker.md und den aktuellen Git-Diff.
 
 Deine Aufgabe:
-- Prüfe nur `README.md`, `docs/architecture.md` und `docs/documentation.md`.
-- Erstelle fehlende Dateien nur, wenn sie für die aktuelle Änderung nötig sind.
+- Bearbeite nur `README.md`, `docs/architecture.md` und `docs/documentation.md`.
+- Bei neuen Features oder neuen Lauf-/Testwegen in Backend, CLI oder Frontend ist Doku Pflicht.
+- `README.md`: nur Projekt-Setup, lokale Startbefehle, Testbefehle und schneller Repo-Einstieg.
+- `docs/architecture.md`: nur Modulgrenzen, Verantwortlichkeiten, Integrationsfluss und technische Entscheidungen.
+- `docs/documentation.md`: nur API-, CLI- und UI-Verhalten, Validierung, Hinweise und Nutzungsbeispiele.
+- Schreibe nichts doppelt. Wenn ein Punkt in eine Datei gehört, erwähne ihn in den anderen Dateien höchstens kurz oder gar nicht.
 - Dokumentiere nur reale Verhaltens-, Architektur- oder Nutzungsänderungen.
-- Keine allgemeinen Umschreibungen, kein Doku-Refactor.
+- Keine allgemeinen Umschreibungen, kein Doku-Refactor, kein Fülltext.
 - Führe nach Doku-Änderungen einen kurzen Self-Check auf Konsistenz mit dem Diff durch.
 
 Wenn Doku angepasst wurde:
 - schreibe am Ende exakt `READY_FOR_REVIEW`.
 
-Wenn keine Doku-Änderung nötig ist:
+Wenn wirklich keine Doku-Änderung nötig ist:
 - schreibe am Ende exakt `DOCS_UNCHANGED`.
 
 Wenn blockiert:
@@ -293,6 +306,7 @@ Wenn dort CHANGES_REQUESTED steht:
 - Setze alle Doku-Review-Punkte um.
 - Bearbeite nur `README.md`, `docs/architecture.md` und `docs/documentation.md`.
 - Halte die Doku knapp und deckungsgleich mit dem Code-Diff.
+- Entferne doppelte Aussagen zwischen README, Architektur und Nutzungsdoku statt sie umzuschreiben.
 - Führe einen kurzen Self-Check auf Konsistenz mit dem Diff durch.
 - Schreibe am Ende exakt `READY_FOR_REVIEW`.
 
@@ -321,9 +335,13 @@ Kontext:
 
 Prüfe:
 - Sind `README.md`, `docs/architecture.md` und `docs/documentation.md` korrekt zum tatsächlichen Code-Diff?
+- Fehlt bei neuen Features oder neuen Run-/Testwegen eine der drei Doku-Ebenen?
+- Ist `README.md` auf Setup/Run/Test fokussiert statt Architektur oder Feature-Details zu wiederholen?
+- Ist `docs/architecture.md` nur Architektur und nicht Nutzungsdoku in anderem Wortlaut?
+- Ist `docs/documentation.md` nur Verhalten/Nutzung und nicht Architektur oder README-Duplikat?
 - Fehlt eine wichtige Nutzungs- oder Architekturinfo?
 - Enthält die Doku Behauptungen, die der Code nicht erfüllt?
-- Ist die Änderung knapp statt aufgebläht?
+- Ist die Änderung knapp statt aufgebläht oder doppelt?
 
 Wichtig:
 - Nicht schreiben.
@@ -458,6 +476,16 @@ EOF
     fi
 
     if grep -q "DOCS_UNCHANGED" "$LOOP_DIR/doc-worker.md"; then
+      if branch_requires_docs "$branch"; then
+        echo "Doc worker skipped required documentation for issue #$number."
+        cat > "$LOOP_DIR/review.md" <<'EOF'
+CHANGES_REQUESTED:
+- Für diesen Diff ist Doku Pflicht. Ergänze README.md für Setup/Run/Test sowie die passenden Architektur-/Nutzungsdetails in docs/architecture.md und docs/documentation.md ohne doppelte Aussagen.
+EOF
+        mark_issue_blocked "$number" "$LOOP_DIR/review.md"
+        exit 1
+      fi
+
       echo "Doc worker reports no documentation changes needed."
     else
       doc_round=1
