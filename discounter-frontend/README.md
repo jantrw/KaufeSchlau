@@ -2,7 +2,7 @@
 
 ## Zweck
 
-Vue-Frontend fuer PLZ-, Regions- und Haendlerabfragen gegen das lokale Backend.
+Vue-Frontend für PLZ-, Regions- und Händlerabfragen gegen das lokale Backend.
 
 ## Voraussetzungen
 
