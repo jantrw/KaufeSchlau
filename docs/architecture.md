@@ -1,16 +1,29 @@
 # Architektur
 
-## Codex-Autopilot-Loop
+## Überblick
 
-Das Repository enthält mit `scripts/codex-autopilot.sh` einen einfachen Agent-Loop mit drei Rollen:
+Dieser Branch ergänzt das Phase-1-Backend um ein Vue-Frontend. Das Frontend fragt das Backend per HTTP ab und bildet die Standortregeln direkt in der Oberfläche ab.
 
-- Worker: setzt genau ein GitHub-Issue um
-- Reviewer: prüft zuerst den Code-Diff und danach die Doku-Änderungen
-- Doku-Worker: pflegt nur `README.md`, `docs/architecture.md` und `docs/documentation.md`
+## Module
 
-Die Issue-Auswahl erfolgt nach aufsteigender Issue-Nummer innerhalb der offenen passenden `phase-1`-Issues.
-`.codex-loop/` ist Teil des Repos und dient als sichtbarer lokaler Laufzustand. Der Ordner wird zusammen mit echten Issue-Änderungen im Branch mitgeführt, aber ein reiner `.codex-loop`-Diff gilt nicht als umgesetztes Issue.
-Existiert zu einem Issue bereits ein lokaler oder Remote-Branch, verwendet der Loop diesen weiter statt ihn neu von `main` aufzusetzen.
-`issue.md` enthält neben Titel, URL und Body auch die vorhandenen GitHub-Issue-Kommentare als zusätzlichen Arbeitskontext.
-`MAX_ROUNDS` begrenzt die Zahl der Review-Änderungsschleifen; ein letzter Fix erhält noch eine abschließende Reviewer-Prüfung.
-Ein Resume-Lauf kann einen fehlenden PR nachholen, wenn auf dem Issue-Branch bereits ein fachlicher Diff gegen `main` existiert.
+- `discounter-backend`
+  - liefert Prospektdaten und Validierungsfehler unter `http://localhost:8080`
+- `discounter-frontend`
+  - `HomeView` koordiniert Eingaben, Laden und Fehlerzustände
+  - `RetailerFilter`, `RegionInput`, `DiscounterList` und `DiscounterCard` bilden die UI-Segmente
+  - `services/api.ts` kapselt den Backend-Aufruf und normalisiert die Response
+
+## Integrationsfluss
+
+1. Nutzer wählen Händler und optional PLZ oder Region im Frontend.
+2. `HomeView` leitet die Auswahl an `fetchProspects` weiter.
+3. Das Frontend ruft `GET /api/v1/prospects` auf dem Backend auf.
+4. Die Response wird in UI-geeignete `ProspectLink`-Objekte normalisiert.
+5. Komponenten zeigen Links, Hinweise und Validierungsfehler an.
+
+## Technische Entscheidungen
+
+- Frontend mit Vue 3, Vite und TypeScript
+- Backend-Aufrufe über Axios
+- UI-Validierung für optionale und verpflichtende Standortangaben direkt im Frontend
+- Response-Normalisierung unterstützt sowohl reine Arrays als auch `{ items: [...] }`

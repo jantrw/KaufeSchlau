@@ -1,41 +1,46 @@
 # Dokumentation
 
-## Nutzung des Autopilot-Skripts
+## Oberfläche
 
-Start:
+Die Startseite enthält:
 
-```bash
-./scripts/codex-autopilot.sh
+- Händlerauswahl
+- PLZ- und Regionseingabe
+- Laden-Button
+- Ergebnisliste mit Prospektkarten
+
+## Verhalten
+
+- Ohne Auswahl werden alle Händler betrachtet.
+- Sobald ausgewählte Händler Standortkontext brauchen, verlangt die Oberfläche PLZ oder Region.
+- Eine unvollständige PLZ wie `123` wird auch dann als Fehler angezeigt, wenn Standort nur optional wäre.
+- Backend-Fehler werden als verständliche Meldung in der Ergebnisliste angezeigt.
+
+## Ergebnisdarstellung
+
+- Jede Karte zeigt Händlername und Prospektlink.
+- Wenn eine Region sauber ableitbar ist, erscheint sie als Tag.
+- Wenn das Backend nur einen offiziellen Einstiegspunkt liefert, zeigt die Karte einen Hinweis statt einer erfundenen Region.
+- Händler mit Filialpflicht oder Fallback-Verhalten zeigen zusätzliche Hinweistexte.
+
+## Frontend-API
+
+Das Frontend ruft auf:
+
+```text
+GET /api/v1/prospects
 ```
 
-Beispiel mit expliziten Modellen:
+Die Response darf entweder:
 
-```bash
-WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4-mini DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
-```
+- ein Array von Prospekten
+- oder ein Objekt mit `items`
 
-### Verhalten
+sein. Das Frontend normalisiert beide Varianten auf dasselbe Modell.
 
-- Wenn mehrere passende Issues offen sind, wird immer die kleinste Issue-Nummer zuerst genommen.
-- Issues mit `codex-blocked`, `codex-in-progress` oder `codex-reviewed` werden übersprungen.
-- Existiert der erwartete Issue-Branch schon lokal, setzt der Loop dort fort.
-- Existiert er nur auf `origin`, legt der Loop einen lokalen Tracking-Branch darauf an.
-- Nur wenn noch kein Issue-Branch existiert, erstellt der Loop ihn neu von `main`.
-- `.codex-loop/issue.md` enthält den Issue-Body und zusätzlich die vorhandenen GitHub-Kommentare.
-- Ein Issue bleibt im Review-Loop, bis der Reviewer `APPROVED` liefert oder mehr als `MAX_ROUNDS` Änderungsschleifen nötig wären.
-- Der Doku-Worker läuft erst nach erfolgreichem Code-Review.
-- Derselbe Reviewer prüft danach mögliche Doku-Änderungen.
-- Wenn keine Doku-Änderung nötig ist, meldet der Doku-Worker `DOCS_UNCHANGED`.
-- Bei `PUSH=true` werden Branch und Pull Request erstellt und das Issue danach geschlossen.
-- Wenn in einem Resume-Lauf kein neuer Commit entsteht, der Branch aber bereits einen echten Diff gegen `main` hat, erstellt der Loop den fehlenden PR trotzdem.
-- Modell und Reasoning-Level werden getrennt gesetzt; `gpt-5.5-medium` ist kein einzelner Modell-Slug.
-- `.codex-loop/` ist versioniert, wird beim Clean-Check ignoriert und zusammen mit echten Issue-Änderungen in Branch und PR mitgeführt.
-- Ein reiner `.codex-loop`-Diff reicht nicht für Commit, PR oder Issue-Abschluss.
+## Frontend-Checks
 
-### Abbruchfälle
-
-- Dirty Working Tree vor Start
-- fehlende CLI-Tools
-- Worker oder Doku-Worker meldet `BLOCKED`
-- Reviewer-Ausgabe entspricht nicht dem erwarteten Format
-- maximale Review-Runden erreicht
+- `npm --prefix discounter-frontend run test`
+  - deckt Standortpflicht, Fehlerdarstellung und Ergebnisdarstellung ab
+- `npm --prefix discounter-frontend run build`
+  - prüft TypeScript und den Production-Build
