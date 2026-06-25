@@ -125,6 +125,24 @@ class ListCommandTest {
         assertEquals("Backend nicht erreichbar: http://backend.invalid%n".formatted(), err.toString());
     }
 
+    @Test
+    void printsHelpForListCommand() {
+        var out = new StringWriter();
+        var err = new StringWriter();
+        var cli = new CommandLine(new DiscounterCli());
+        cli.setOut(new PrintWriter(out, true));
+        cli.setErr(new PrintWriter(err, true));
+
+        var exitCode = cli.execute("list", "--help");
+
+        assertEquals(0, exitCode);
+        assertTrue(out.toString().contains("Usage: discounter list"));
+        assertTrue(out.toString().contains("--plz"));
+        assertTrue(out.toString().contains("--region"));
+        assertTrue(out.toString().contains("--format"));
+        assertEquals("", err.toString());
+    }
+
     private ListCommand command(int status, String body, AtomicReference<String> requestedQuery) throws IOException {
         return command(status, body, new StringWriter(), new StringWriter(), requestedQuery);
     }

@@ -20,7 +20,10 @@ import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = "list", description = "Prospektlinks vom Backend abrufen")
+@Command(
+        name = "list",
+        description = "Prospektlinks vom Backend abrufen.",
+        mixinStandardHelpOptions = true)
 public class ListCommand implements Callable<Integer> {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -30,19 +33,19 @@ public class ListCommand implements Callable<Integer> {
     private final PrintWriter out;
     private final PrintWriter err;
 
-    @Option(names = "--plz")
+    @Option(names = "--plz", description = "Fuenfstellige Postleitzahl fuer standortabhaengige Haendler.")
     String plz;
 
-    @Option(names = "--region")
+    @Option(names = "--region", description = "Region oder Bundesland als Alternative zur PLZ.")
     String region;
 
-    @Option(names = "--id")
+    @Option(names = "--id", description = "Einzelne Haendler-ID.")
     String id;
 
-    @Option(names = "--ids", split = ",")
+    @Option(names = "--ids", split = ",", description = "Mehrere Haendler-IDs als CSV, zum Beispiel lidl,penny.")
     List<String> ids = new ArrayList<>();
 
-    @Option(names = "--format", defaultValue = "plain")
+    @Option(names = "--format", defaultValue = "plain", description = "Ausgabeformat: ${COMPLETION-CANDIDATES}.")
     OutputFormat format;
 
     public ListCommand() {
