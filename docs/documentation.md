@@ -25,7 +25,12 @@ WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIE
 - Ein Issue bleibt im Review-Loop, bis der Reviewer `APPROVED` liefert oder mehr als `MAX_ROUNDS` Änderungsschleifen nötig wären.
 - Der Doku-Worker läuft erst nach erfolgreichem Code-Review.
 - Derselbe Reviewer prüft danach mögliche Doku-Änderungen.
-- Wenn keine Doku-Änderung nötig ist, meldet der Doku-Worker `DOCS_UNCHANGED`.
+- Bei neuen Features oder neuen lokalen Run-/Testwegen in Backend, CLI oder Frontend ist Doku Pflicht.
+- `README.md` deckt nur Setup, Start und Testbefehle ab.
+- `docs/architecture.md` deckt nur Modulgrenzen, Verantwortlichkeiten und Integrationsfluss ab.
+- `docs/documentation.md` deckt nur Verhalten, Nutzung, Validierung und Beispiele ab.
+- Doppelte Aussagen zwischen diesen drei Dateien sollen vermieden statt umformuliert werden.
+- `DOCS_UNCHANGED` ist nur für reine Tests, nicht-funktionale Refactors oder interne Korrekturen ohne Doku-Auswirkung zulässig.
 - Bei `PUSH=true` werden Branch und Pull Request erstellt und das Issue danach geschlossen.
 - Wenn in einem Resume-Lauf kein neuer Commit entsteht, der Branch aber bereits einen echten Diff gegen `main` hat, erstellt der Loop den fehlenden PR trotzdem.
 - Modell und Reasoning-Level werden getrennt gesetzt; `gpt-5.5-medium` ist kein einzelner Modell-Slug.
