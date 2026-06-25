@@ -1,50 +1,21 @@
 # KaufeSchlau
 
-## Überblick
+## Codex Autopilot
 
-Dieser Stand enthält das Phase-1-Backend für offizielle Prospektlinks.
+Das Skript `scripts/codex-autopilot.sh` verarbeitet offene GitHub-Issues in einem festen Loop.
+
+`.codex-loop/` ist bewusst versioniert. Der Ordner zeigt den letzten lokalen Loop-Stand, blockiert den Loop-Start nicht und wird zusammen mit echten Issue-Änderungen in Branch und PR mitgeführt.
+
+Beispiel:
+
+```bash
+WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4-mini DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
+```
 
 ## Voraussetzungen
 
-- Java 21
-- Maven 3.9+
-
-## Backend lokal starten
-
-```bash
-mvn -f discounter-backend/pom.xml spring-boot:run
-```
-
-Standard-URL:
-
-```text
-http://localhost:8080
-```
-
-## Tests ausführen
-
-Alle Backend-Tests:
-
-```bash
-mvn -f discounter-backend/pom.xml test
-```
-
-Nur Controller-Tests:
-
-```bash
-mvn -f discounter-backend/pom.xml -Dtest=ProspectControllerTest test
-```
-
-## Schnelltest
-
-Alle Händler mit PLZ:
-
-```bash
-curl "http://localhost:8080/api/v1/prospects?plz=65185"
-```
-
-Ein Händler:
-
-```bash
-curl "http://localhost:8080/api/v1/prospects/lidl"
-```
+- `git`
+- `gh`
+- `codex` o. Ä.
+- sauberer Working Tree vor Start
+- Zum automatischen Schließen muss `PUSH=true` gesetzt sein, weil das Issue erst nach PR-Erstellung geschlossen wird.
