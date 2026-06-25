@@ -2,7 +2,7 @@
 
 ## Zweck
 
-Spring-Boot-Backend fuer Phase-1-Prospektlinks und Validierungsfehler.
+Spring-Boot-Backend für Phase-1-Prospektlinks und Validierungsfehler.
 
 ## Voraussetzungen
 
