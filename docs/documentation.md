@@ -26,7 +26,9 @@ WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIE
 - Der Doku-Worker läuft erst nach erfolgreichem Code-Review.
 - Derselbe Reviewer prüft danach mögliche Doku-Änderungen.
 - Bei neuen Features oder neuen lokalen Run-/Testwegen in Backend, CLI oder Frontend ist Doku Pflicht.
-- `README.md` deckt nur Setup, Start und Testbefehle ab.
+- Reine Dependency-, Build- oder Lockfile-Änderungen ohne neue Bedien- oder Laufauswirkung brauchen keine Doku.
+- Die Root-`README.md` wird vom Loop nicht bearbeitet.
+- Modul-READMEs decken nur Setup, Start und Testbefehle des jeweiligen Moduls ab.
 - `docs/architecture.md` deckt nur Modulgrenzen, Verantwortlichkeiten und Integrationsfluss ab.
 - `docs/documentation.md` deckt nur Verhalten, Nutzung, Validierung und Beispiele ab.
 - Doppelte Aussagen zwischen diesen drei Dateien sollen vermieden statt umformuliert werden.
