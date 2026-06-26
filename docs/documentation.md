@@ -1,5 +1,10 @@
 # Dokumentation
 
+## Lokale Reproduktion
+
+Start, CLI-Aufrufe und Checks stehen im `README.md`.
+Diese Datei beschreibt das Verhalten der Codebase.
+
 ## REST-Endpunkte
 
 Alle Prospekte:
@@ -29,6 +34,27 @@ GET /api/v1/prospects/{id}
 - Händler mit Standortpflicht verlangen `plz` oder `region`.
 - Aldi Nord und Aldi Süd werden bei passender Anfrage anhand von PLZ oder Region gefiltert.
 - Für standortabhängige Händler liefert Phase 1 nur den offiziellen Einstiegspunkt plus Hinweis auf spätere Auflösung.
+
+## Prospect-Response
+
+Das Backend liefert Listen in diesem Format:
+
+```json
+{
+  "items": [
+    {
+      "id": "rewe",
+      "name": "REWE",
+      "prospectUrl": "https://www.rewe.de/angebote/nationale-angebote/",
+      "regionType": "PLZ_BASIERT",
+      "urlMode": "LOCATION_RESOLVED",
+      "requiresLocationContext": true,
+      "requiresStoreSelection": true,
+      "notice": "Phase 1 nutzt den offiziellen Einstiegspunkt. Filialgenaue Auflösung folgt später."
+    }
+  ]
+}
+```
 
 ## Backend-Fehlerfälle
 
@@ -116,29 +142,8 @@ Die Response darf entweder:
 
 sein. Das Frontend normalisiert beide Varianten auf dasselbe Modell.
 
-## Frontend-Checks
+## Phase-1-Einschränkungen
 
-- `npm --prefix discounter-frontend run test`
-  - deckt Standortpflicht, Fehlerdarstellung und Ergebnisdarstellung ab
-- `npm --prefix discounter-frontend run build`
-  - prüft TypeScript und den Production-Build
-
-## Beispiele
-
-Backend mit PLZ:
-
-```bash
-curl "http://localhost:8080/api/v1/prospects?plz=65185"
-```
-
-CLI mit Plain-Text-Ausgabe:
-
-```bash
-java -jar discounter-cli/target/discounter-cli-0.1.0-SNAPSHOT.jar list --plz 65185
-```
-
-CLI mit JSON-Ausgabe:
-
-```bash
-java -jar discounter-cli/target/discounter-cli-0.1.0-SNAPSHOT.jar list --ids lidl,rewe --plz 65185 --format json
-```
+- Standortabhängige Händler liefern offizielle Einstiegspunkte, keine filialgenauen Prospekte.
+- Echte dynamische Prospektauflösung folgt erst in Phase 2.
+- Ohne PLZ, Region oder erlaubten Händlerfilter liefert das Backend `LOCATION_REQUIRED`.

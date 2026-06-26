@@ -34,8 +34,10 @@ class ProspectControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(3)))
                 .andExpect(jsonPath("$.items[0].id").value("lidl"))
-                .andExpect(jsonPath("$.items[0].url").value("https://www.lidl.de/c/online-prospekte/s10005610"))
-                .andExpect(jsonPath("$.items[0].resolutionMode").value("STATIC_ENTRYPOINT"))
+                .andExpect(jsonPath("$.items[0].prospectUrl").value("https://www.lidl.de/c/online-prospekte/s10005610"))
+                .andExpect(jsonPath("$.items[0].urlMode").value("STATIC_ENTRYPOINT"))
+                .andExpect(jsonPath("$.items[0].regionType").value("OPTIONAL_FILIALE"))
+                .andExpect(jsonPath("$.items[0].requiresStoreSelection").value(false))
                 .andExpect(jsonPath("$.items[0].requiresLocationContext").value(false));
     }
 
@@ -97,10 +99,11 @@ class ProspectControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(1)))
                 .andExpect(jsonPath("$.items[0].id").value("rewe"))
-                .andExpect(jsonPath("$.items[0].url").value("https://www.rewe.de/angebote/nationale-angebote/"))
-                .andExpect(jsonPath("$.items[0].resolutionMode").value("LOCATION_RESOLVED"))
+                .andExpect(jsonPath("$.items[0].prospectUrl").value("https://www.rewe.de/angebote/nationale-angebote/"))
+                .andExpect(jsonPath("$.items[0].urlMode").value("LOCATION_RESOLVED"))
                 .andExpect(jsonPath("$.items[0].requiresLocationContext").value(true))
-                .andExpect(jsonPath("$.items[0].fallbackHint").value("Phase 1 nutzt den offiziellen Einstiegspunkt. Filialgenaue Auflösung folgt später."))
+                .andExpect(jsonPath("$.items[0].requiresStoreSelection").value(true))
+                .andExpect(jsonPath("$.items[0].notice").value("Phase 1 nutzt den offiziellen Einstiegspunkt. Filialgenaue Auflösung folgt später."))
                 .andExpect(jsonPath("$.items[0].resolverHint").value("PLZ -> Markt -> /angebote/{ort}/{marketId}/{marketSlug}/"));
     }
 
@@ -109,7 +112,7 @@ class ProspectControllerTest {
         mockMvc.perform(get("/api/v1/prospects/aldi-sued"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("aldi-sued"))
-                .andExpect(jsonPath("$.url").value("https://www.aldi-sued.de/prospekte"))
+                .andExpect(jsonPath("$.prospectUrl").value("https://www.aldi-sued.de/prospekte"))
                 .andExpect(jsonPath("$.requiresLocationContext").value(false));
     }
 
@@ -118,10 +121,10 @@ class ProspectControllerTest {
         mockMvc.perform(get("/api/v1/prospects/edeka").queryParam("region", "hessen"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("edeka"))
-                .andExpect(jsonPath("$.url").value("https://www.edeka.de/angebote/"))
-                .andExpect(jsonPath("$.resolutionMode").value("LOCATION_RESOLVED"))
+                .andExpect(jsonPath("$.prospectUrl").value("https://www.edeka.de/angebote/"))
+                .andExpect(jsonPath("$.urlMode").value("LOCATION_RESOLVED"))
                 .andExpect(jsonPath("$.requiresLocationContext").value(true))
-                .andExpect(jsonPath("$.fallbackHint").value("Phase 1 nutzt den offiziellen Einstiegspunkt. Filialgenaue Auflösung folgt später."))
+                .andExpect(jsonPath("$.notice").value("Phase 1 nutzt den offiziellen Einstiegspunkt. Filialgenaue Auflösung folgt später."))
                 .andExpect(jsonPath("$.resolverHint").value("PLZ -> Markt-ID -> /markt-id/{marketId}/prospekt.jsp"))
                 .andExpect(jsonPath("$.marketSearchUrl").value("https://www.edeka.de/marktsuche.jsp"))
                 .andExpect(jsonPath("$.officialUrl").value(true));

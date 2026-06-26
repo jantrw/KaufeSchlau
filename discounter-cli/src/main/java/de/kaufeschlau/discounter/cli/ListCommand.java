@@ -145,7 +145,7 @@ public class ListCommand implements Callable<Integer> {
 
         for (var prospect : prospects) {
             var name = text(prospect, "name", text(prospect, "id", "unbekannt"));
-            var url = text(prospect, "prospectUrl", text(prospect, "url", ""));
+            var url = text(prospect, "prospectUrl", "");
             out.println(name + ": " + url);
 
             var notice = text(prospect, "notice", text(prospect, "message", ""));

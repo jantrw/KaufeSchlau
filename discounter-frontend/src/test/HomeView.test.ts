@@ -152,7 +152,7 @@ describe("HomeView", () => {
         prospectUrl: "https://www.aldi-sued.de/prospekte",
         requiresLocationContext: false,
         requiresStoreSelection: false,
-        fallbackUsed: true,
+        notice: "Offizieller Einstiegspunkt angezeigt; konkrete Wochenauflösung folgt später.",
       },
     ]);
 
@@ -175,7 +175,7 @@ describe("HomeView", () => {
         prospectUrl: "https://www.rewe.de/angebote/nationale-angebote/",
         requiresLocationContext: true,
         requiresStoreSelection: true,
-        fallbackUsed: true,
+        notice: "Offizieller Einstiegspunkt angezeigt; konkrete Wochenauflösung folgt später.",
       },
     ]);
 

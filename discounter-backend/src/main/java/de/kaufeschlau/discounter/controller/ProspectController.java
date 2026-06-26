@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/v1/prospects")
 class ProspectController {
 
@@ -147,16 +149,19 @@ class ProspectController {
                 discounter.id(),
                 discounter.name(),
                 discounter.prospectUrl(),
+                discounter.regionType(),
                 discounter.urlMode(),
+                discounter.aldiRegion(),
                 requirement.discounterIds().contains(discounter.id()),
+                discounter.requiresStoreSelection(),
                 discounter.locationRequirementReason(),
-                fallbackHint(discounter),
+                notice(discounter),
                 discounter.resolverHint(),
                 discounter.marketSearchUrl(),
                 discounter.officialUrl());
     }
 
-    private String fallbackHint(Discounter discounter) {
+    private String notice(Discounter discounter) {
         return discounter.urlMode() == UrlMode.LOCATION_RESOLVED ? FALLBACK_HINT : null;
     }
 
@@ -182,11 +187,14 @@ class ProspectController {
     record ProspectResponse(
             String id,
             String name,
-            String url,
-            UrlMode resolutionMode,
+            String prospectUrl,
+            RegionType regionType,
+            UrlMode urlMode,
+            AldiRegion resolvedRegion,
             boolean requiresLocationContext,
+            boolean requiresStoreSelection,
             String locationRequirementReason,
-            String fallbackHint,
+            String notice,
             String resolverHint,
             String marketSearchUrl,
             boolean officialUrl) {
@@ -194,8 +202,9 @@ class ProspectController {
         ProspectResponse {
             Objects.requireNonNull(id);
             Objects.requireNonNull(name);
-            Objects.requireNonNull(url);
-            Objects.requireNonNull(resolutionMode);
+            Objects.requireNonNull(prospectUrl);
+            Objects.requireNonNull(regionType);
+            Objects.requireNonNull(urlMode);
         }
     }
 }

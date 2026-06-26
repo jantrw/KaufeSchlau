@@ -50,7 +50,7 @@ class ListCommandBackendIntegrationTest {
 
         assertEquals(1, exitCode);
         assertEquals("", out.toString());
-        assertTrue(err.toString().contains("PLZ oder Region erforderlich"));
+        assertTrue(err.toString().contains("LOCATION_REQUIRED: PLZ oder Region ist erforderlich"));
     }
 
     @Test
@@ -66,7 +66,7 @@ class ListCommandBackendIntegrationTest {
 
         assertEquals(1, exitCode);
         assertEquals("", out.toString());
-        assertTrue(err.toString().contains("UNKNOWN_DISCOUNTER: Unbekannter Händler: netto"));
+        assertTrue(err.toString().contains("RETAILER_NOT_FOUND: Unbekannter Händler: netto"));
     }
 
     @Test
@@ -82,7 +82,7 @@ class ListCommandBackendIntegrationTest {
 
         assertEquals(1, exitCode);
         assertEquals("", out.toString());
-        assertTrue(err.toString().contains("INVALID_LOCATION: Region ist unbekannt"));
+        assertTrue(err.toString().contains("INVALID_REQUEST: Region ist unbekannt"));
     }
 
     @Test
@@ -98,7 +98,7 @@ class ListCommandBackendIntegrationTest {
 
         var prospects = JSON.readTree(out.toString());
         assertEquals(0, exitCode);
-        assertTrue(prospects.isArray());
+        assertTrue(prospects.path("items").isArray());
         assertFalse(prospects.findValuesAsText("id").contains("aldi-nord"));
         assertTrue(prospects.findValuesAsText("id").contains("aldi-sued"));
         assertEquals("", err.toString());
