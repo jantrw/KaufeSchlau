@@ -2,7 +2,7 @@
 
 ## Überblick
 
-Dieser Stand enthält das Phase-1-Backend und eine eigenständige Java-CLI. Die CLI ruft das REST-Backend per HTTP auf und formatiert die Antworten für Terminal-Nutzung.
+Dieser Stand enthält das Phase-1-Backend, eine eigenständige Java-CLI und ein Vue-Frontend. CLI und Frontend rufen dasselbe REST-Backend auf und bereiten die Antworten jeweils für Terminal oder Oberfläche auf.
 
 ## Module
 
@@ -17,6 +17,10 @@ Dieser Stand enthält das Phase-1-Backend und eine eigenständige Java-CLI. Die 
   - `DiscounterCli` registriert die Picocli-Kommandos.
   - `ListCommand` baut Query-Parameter, ruft das Backend auf und formatiert die Ausgabe.
   - `OutputFormat` schaltet zwischen Text- und JSON-Ausgabe um.
+- `discounter-frontend`
+  - `HomeView` koordiniert Eingaben, Laden und Fehlerzustände.
+  - `RetailerFilter`, `RegionInput`, `DiscounterList` und `DiscounterCard` bilden die UI-Segmente.
+  - `services/api.ts` kapselt den Backend-Aufruf und normalisiert die Response.
 
 ## Integrationsfluss
 
@@ -26,6 +30,7 @@ Dieser Stand enthält das Phase-1-Backend und eine eigenständige Java-CLI. Die 
 4. Für Aldi wird bei Bedarf die Region aus PLZ oder Bundesland abgeleitet.
 5. Das Backend liefert offizielle Phase-1-Einstiegspunkte zurück.
 6. Die CLI gibt entweder das Original-JSON oder formatierte Textzeilen mit optionalen Hinweisen aus.
+7. Das Frontend ruft denselben Endpunkt auf, normalisiert Array- und `items`-Responses und zeigt Links, Hinweise und Validierungsfehler an.
 
 ## Technische Entscheidungen
 
@@ -34,3 +39,7 @@ Dieser Stand enthält das Phase-1-Backend und eine eigenständige Java-CLI. Die 
 - Terminal-Parsing über Picocli
 - Fat-JAR-Bau der CLI über `maven-shade-plugin`
 - Standard-Backend-URL der CLI per Umgebungsvariable `BACKEND_URL` überschreibbar
+- Frontend mit Vue 3, Vite und TypeScript
+- Frontend-Aufrufe über Axios
+- UI-Validierung für optionale und verpflichtende Standortangaben direkt im Frontend
+- Response-Normalisierung im Frontend unterstützt sowohl reine Arrays als auch `{ items: [...] }`

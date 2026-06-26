@@ -1,0 +1,233 @@
+:root {
+  color: #1f2937;
+  background: #f6f7f9;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+header p {
+  margin: 0 0 4px;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+h1 {
+  font-size: 2.25rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+}
+
+.panel,
+.results {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.section-title span,
+.hint {
+  color: #4b5563;
+}
+
+.required {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.optional {
+  color: #047857;
+  font-weight: 700;
+}
+
+.location-grid,
+.retailer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+input {
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+input[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+
+input[type="checkbox"] {
+  min-height: auto;
+  padding: 0;
+}
+
+.retailer-option {
+  min-height: 56px;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.retailer-option small {
+  display: block;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.prospect-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.prospect-card {
+  height: 100%;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.prospect-card-header {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.prospect-card-content {
+  display: grid;
+  gap: 8px;
+}
+
+.prospect-card-content p {
+  margin: 0;
+}
+
+.prospect-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  width: fit-content;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.primary-button,
+.button-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  background: #0f766e;
+  color: #ffffff;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button-link.secondary {
+  background: #374151;
+}
+
+.primary-button {
+  margin-bottom: 16px;
+}
+
+.message {
+  margin-bottom: 16px;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.message.warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.message.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.message.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.message.secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #d1d5db;
+  border-top-color: #0f766e;
+  border-radius: 999px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
