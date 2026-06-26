@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kaufeschlau.discounter.model.AldiRegion;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +15,6 @@ public class AldiRegionResolverService {
 
     private final Map<String, String> plzPrefixToBundesland;
     private final Map<String, AldiRegion> bundeslandToAldiRegion;
-    private final Map<String, AldiRegion> regionToAldiRegion;
 
     public AldiRegionResolverService() {
         try {
@@ -24,28 +23,6 @@ public class AldiRegionResolverService {
             var mapping = objectMapper.readValue(resource.getInputStream(), new TypeReference<PlzMapping>() {});
             this.plzPrefixToBundesland = Map.copyOf(mapping.plzPrefixToBundesland());
             this.bundeslandToAldiRegion = Map.copyOf(mapping.bundeslandToAldiRegion());
-            this.regionToAldiRegion = Map.ofEntries(
-                    Map.entry("baden-wuerttemberg", AldiRegion.SUED),
-                    Map.entry("baden-württemberg", AldiRegion.SUED),
-                    Map.entry("bayern", AldiRegion.SUED),
-                    Map.entry("hessen", AldiRegion.SUED),
-                    Map.entry("rheinland-pfalz", AldiRegion.SUED),
-                    Map.entry("saarland", AldiRegion.SUED),
-                    Map.entry("berlin", AldiRegion.NORD),
-                    Map.entry("brandenburg", AldiRegion.NORD),
-                    Map.entry("bremen", AldiRegion.NORD),
-                    Map.entry("hamburg", AldiRegion.NORD),
-                    Map.entry("mecklenburg-vorpommern", AldiRegion.NORD),
-                    Map.entry("niedersachsen", AldiRegion.NORD),
-                    Map.entry("nordrhein-westfalen", AldiRegion.NORD),
-                    Map.entry("sachsen", AldiRegion.NORD),
-                    Map.entry("sachsen-anhalt", AldiRegion.NORD),
-                    Map.entry("schleswig-holstein", AldiRegion.NORD),
-                    Map.entry("thueringen", AldiRegion.NORD),
-                    Map.entry("thüringen", AldiRegion.NORD),
-                    Map.entry("nord", AldiRegion.NORD),
-                    Map.entry("sued", AldiRegion.SUED),
-                    Map.entry("süd", AldiRegion.SUED));
         } catch (IOException exception) {
             throw new UncheckedIOException("PLZ-Bundesland-Mapping konnte nicht geladen werden.", exception);
         }
@@ -74,11 +51,59 @@ public class AldiRegionResolverService {
             throw new IllegalArgumentException("Region darf nicht leer sein.");
         }
 
-        var aldiRegion = regionToAldiRegion.get(region.trim().toLowerCase(Locale.GERMAN));
+        var normalizedRegion = region.trim().toLowerCase(Locale.ROOT);
+        var directAldiRegion = switch (normalizedRegion) {
+            case "nord", "aldi-nord" -> AldiRegion.NORD;
+            case "sued", "süd", "aldi-sued", "aldi-süd" -> AldiRegion.SUED;
+            default -> null;
+        };
+        if (directAldiRegion != null) {
+            return directAldiRegion;
+        }
+
+        var bundesland = bundeslandCode(normalizedRegion, region);
+        var aldiRegion = bundeslandToAldiRegion.get(bundesland);
         if (aldiRegion == null) {
             throw new IllegalArgumentException("Region ist unbekannt: " + region);
         }
+
         return aldiRegion;
+    }
+
+    public AldiRegion resolveBundeslandRegion(String region) {
+        if (region == null || region.isBlank()) {
+            throw new IllegalArgumentException("Region darf nicht leer sein.");
+        }
+
+        var bundesland = bundeslandCode(region.trim().toLowerCase(Locale.ROOT), region);
+        var aldiRegion = bundeslandToAldiRegion.get(bundesland);
+        if (aldiRegion == null) {
+            throw new IllegalArgumentException("Region ist unbekannt: " + region);
+        }
+
+        return aldiRegion;
+    }
+
+    private String bundeslandCode(String normalizedRegion, String originalRegion) {
+        return switch (normalizedRegion) {
+            case "baden-württemberg", "baden-wuerttemberg", "bw" -> "BW";
+            case "bayern", "by" -> "BY";
+            case "berlin", "be" -> "BE";
+            case "brandenburg", "bb" -> "BB";
+            case "bremen", "hb" -> "HB";
+            case "hamburg", "hh" -> "HH";
+            case "hessen", "he" -> "HE";
+            case "mecklenburg-vorpommern", "mv" -> "MV";
+            case "niedersachsen", "ni" -> "NI";
+            case "nordrhein-westfalen", "nrw", "nw" -> "NW";
+            case "rheinland-pfalz", "rp" -> "RP";
+            case "saarland", "sl" -> "SL";
+            case "sachsen", "sn" -> "SN";
+            case "sachsen-anhalt", "st" -> "ST";
+            case "schleswig-holstein", "sh" -> "SH";
+            case "thüringen", "thueringen", "th" -> "TH";
+            default -> throw new IllegalArgumentException("Region ist unbekannt: " + originalRegion);
+        };
     }
 
     private record PlzMapping(

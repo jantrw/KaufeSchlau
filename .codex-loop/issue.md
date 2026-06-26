@@ -1,22 +1,22 @@
-# Issue #3
+# Issue #2
 
-Title: [feat] CLI für gefilterte und standortabhängige Prospektabfragen
-URL: https://github.com/jantrw/KaufeSchlau/issues/3
+Title: [feat] Backend-API für Prospektlinks und Validierungsfehler
+URL: https://github.com/jantrw/KaufeSchlau/issues/2
 
 ## Context
-Die CLI ist ein eigener Ausgabekanal für Phase 1 und muss dieselben fachlichen Regeln wie das Backend sauber transportieren.
+Nach der Backend-Basis muss das System die offiziellen Prospekt-Einstiegspunkte per REST bereitstellen und ungültige Aufrufe fachlich korrekt ablehnen.
 
 ## Acceptance Criteria
-- [ ] Ein Picocli-basiertes CLI-Modul ist angelegt.
-- [ ] Der Befehl `list` unterstützt `--plz`, `--region`, `--id`, `--ids` und `--format`.
-- [ ] Die CLI ruft das Backend per REST auf und rendert `plain` und `json`.
-- [ ] Backend-Fehler wie fehlender Standortkontext, unbekannte Händler-ID oder nicht erreichbares Backend werden verständlich ausgegeben.
-- [ ] Es gibt automatisierte Tests für Argument-Parsing und mindestens einen erfolgreichen sowie einen fehlerhaften Ablauf.
+- [ ] `GET /api/v1/prospects` und `GET /api/v1/prospects/{id}` sind gemäß Projektplan implementiert.
+- [ ] Abruf ohne PLZ, Region oder erlaubten Händlerfilter liefert den Fehler `LOCATION_REQUIRED` mit verständlicher Begründung.
+- [ ] Gefilterte Händler ohne Standortpflicht funktionieren ohne PLZ oder Region.
+- [ ] Responses enthalten die nötigen Felder für URL, Auflösungsart, Standortpflicht und Fallback-Hinweise.
+- [ ] Controller- oder Integrationstests decken die erlaubten und abgelehnten Aufrufvarianten ab.
 
 ## Technical Notes
-Abhängig von der REST-API.
-Keine direkte Händlerlogik in der CLI duplizieren.
+Baut auf der Backend-Basis auf.
+Für REWE, EDEKA und Netto reicht in Phase 1 die offizielle Einstiegsseite als Fallback.
 
 ## Out of Scope
-Keine native Distribution.
-Keine lokale Persistenz von Standard-PLZ oder Favoriten.
+Keine marktgenaue Filialauflösung.
+Keine periodischen URL-Prüfungen.
