@@ -13,7 +13,6 @@ export interface ProspectLink extends Retailer {
   notice?: string;
   resolvedRegion?: string;
   resolvedDynamically?: boolean;
-  fallbackUsed?: boolean;
 }
 
 export interface LocationRequiredError {

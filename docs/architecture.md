@@ -43,3 +43,16 @@ Dieser Stand enthält das Phase-1-Backend, eine eigenständige Java-CLI und ein 
 - Frontend-Aufrufe über Axios
 - UI-Validierung für optionale und verpflichtende Standortangaben direkt im Frontend
 - Response-Normalisierung im Frontend unterstützt sowohl reine Arrays als auch `{ items: [...] }`
+
+## Lokale Integration
+
+`docker-compose.yml` startet die lokale Phase-1-Integration ohne eigene Dockerfiles:
+
+- `backend` nutzt das Maven-Image und startet `discounter-backend` per Spring Boot.
+- `frontend` nutzt das Node-Image und startet den Vite-Dev-Server auf Port `5173`.
+- `cli` ist ein optionales Compose-Profil und ruft das Backend über `http://backend:8080` auf.
+
+Das Backend erlaubt CORS nur für `http://localhost:5173`, damit das lokale Frontend direkt gegen Port `8080` arbeiten kann.
+
+Das ist eine bewusste Phase-1-Entscheidung für lokale Reproduzierbarkeit.
+Produktionsnahe Dockerfiles für Backend und Frontend sind in Issue #18 geplant.
