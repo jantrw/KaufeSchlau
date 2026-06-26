@@ -1,19 +1,31 @@
 # Architektur
 
-## Codex-Autopilot-Loop
+## Überblick
 
-Das Repository enthält mit `scripts/codex-autopilot.sh` einen einfachen Agent-Loop mit drei Rollen:
+Dieser Branch führt ein einzelnes Spring-Boot-Backend ein. Das Backend liest Händler- und Regionsdaten aus statischen Ressourcen und liefert daraus Phase-1-Prospektlinks per REST aus.
 
-- Worker: setzt genau ein GitHub-Issue um
-- Reviewer: prüft zuerst den Code-Diff und danach die Doku-Änderungen
-- Doku-Worker: pflegt nur Modul-READMEs sowie `docs/architecture.md` und `docs/documentation.md`
+## Module
 
-Die Issue-Auswahl erfolgt nach aufsteigender Issue-Nummer innerhalb der offenen passenden `phase-1`-Issues.
-`.codex-loop/` ist Teil des Repos und dient als sichtbarer lokaler Laufzustand. Der Ordner wird zusammen mit echten Issue-Änderungen im Branch mitgeführt, aber ein reiner `.codex-loop`-Diff gilt nicht als umgesetztes Issue.
-Existiert zu einem Issue bereits ein lokaler oder Remote-Branch, verwendet der Loop diesen weiter statt ihn neu von `main` aufzusetzen.
-`issue.md` enthält neben Titel, URL und Body auch die vorhandenen GitHub-Issue-Kommentare als zusätzlichen Arbeitskontext.
-`MAX_ROUNDS` begrenzt die Zahl der Review-Änderungsschleifen; ein letzter Fix erhält noch eine abschließende Reviewer-Prüfung.
-Ein Resume-Lauf kann einen fehlenden PR nachholen, wenn auf dem Issue-Branch bereits ein fachlicher Diff gegen `main` existiert.
-Die Root-`README.md` bleibt aus dem Loop heraus; der Doku-Worker darf stattdessen nur `discounter-backend/README.md`, `discounter-cli/README.md` und `discounter-frontend/README.md` anfassen.
-Bei echten Feature-, Verhaltens- oder lokalen Ablaufänderungen in Backend, CLI oder Frontend darf der Doku-Worker nicht `DOCS_UNCHANGED` liefern.
-Reine Dependency-, Build- oder Lockfile-Änderungen ohne neue Bedien- oder Laufauswirkung erzwingen keine Doku.
+- `controller`
+  - `ProspectController` bedient `GET /api/v1/prospects` und `GET /api/v1/prospects/{id}`.
+  - `ApiExceptionHandler` übersetzt Fach- und Validierungsfehler in HTTP-Responses.
+- `service`
+  - `LocationRequirementService` entscheidet, ob für die gewählte Händlerauswahl Standortkontext Pflicht ist.
+  - `AldiRegionResolverService` validiert PLZ und Regionsangaben und leitet Aldi Nord/Süd her.
+- `config` und `resources`
+  - `discounters.yml` beschreibt die unterstützten Händler.
+  - `plz-bundesland.json` liefert die PLZ- und Bundeslandzuordnung.
+
+## Request-Fluss
+
+1. Der Controller liest Händlerfilter, PLZ und Region aus den Query-Parametern.
+2. Die Services validieren, ob die Kombination zulässig ist.
+3. Für Aldi wird bei Bedarf die Region aus PLZ oder Bundesland abgeleitet.
+4. Das Backend liefert nur offizielle Phase-1-Einstiegspunkte zurück, keine dynamische Filialauflösung.
+
+## Grenzen dieses Stands
+
+- Keine Datenbank
+- Kein Caching
+- Keine Händler-spezifischen Resolver aus Phase 2
+- Kein Frontend und keine CLI in diesem Branch

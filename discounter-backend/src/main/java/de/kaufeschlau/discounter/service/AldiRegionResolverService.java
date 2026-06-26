@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kaufeschlau.discounter.model.AldiRegion;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,66 @@ public class AldiRegionResolverService {
         }
 
         return region;
+    }
+
+    public AldiRegion resolveRegion(String region) {
+        if (region == null || region.isBlank()) {
+            throw new IllegalArgumentException("Region darf nicht leer sein.");
+        }
+
+        var normalizedRegion = region.trim().toLowerCase(Locale.ROOT);
+        var directAldiRegion = switch (normalizedRegion) {
+            case "nord", "aldi-nord" -> AldiRegion.NORD;
+            case "sued", "süd", "aldi-sued", "aldi-süd" -> AldiRegion.SUED;
+            default -> null;
+        };
+        if (directAldiRegion != null) {
+            return directAldiRegion;
+        }
+
+        var bundesland = bundeslandCode(normalizedRegion, region);
+        var aldiRegion = bundeslandToAldiRegion.get(bundesland);
+        if (aldiRegion == null) {
+            throw new IllegalArgumentException("Region ist unbekannt: " + region);
+        }
+
+        return aldiRegion;
+    }
+
+    public AldiRegion resolveBundeslandRegion(String region) {
+        if (region == null || region.isBlank()) {
+            throw new IllegalArgumentException("Region darf nicht leer sein.");
+        }
+
+        var bundesland = bundeslandCode(region.trim().toLowerCase(Locale.ROOT), region);
+        var aldiRegion = bundeslandToAldiRegion.get(bundesland);
+        if (aldiRegion == null) {
+            throw new IllegalArgumentException("Region ist unbekannt: " + region);
+        }
+
+        return aldiRegion;
+    }
+
+    private String bundeslandCode(String normalizedRegion, String originalRegion) {
+        return switch (normalizedRegion) {
+            case "baden-württemberg", "baden-wuerttemberg", "bw" -> "BW";
+            case "bayern", "by" -> "BY";
+            case "berlin", "be" -> "BE";
+            case "brandenburg", "bb" -> "BB";
+            case "bremen", "hb" -> "HB";
+            case "hamburg", "hh" -> "HH";
+            case "hessen", "he" -> "HE";
+            case "mecklenburg-vorpommern", "mv" -> "MV";
+            case "niedersachsen", "ni" -> "NI";
+            case "nordrhein-westfalen", "nrw", "nw" -> "NW";
+            case "rheinland-pfalz", "rp" -> "RP";
+            case "saarland", "sl" -> "SL";
+            case "sachsen", "sn" -> "SN";
+            case "sachsen-anhalt", "st" -> "ST";
+            case "schleswig-holstein", "sh" -> "SH";
+            case "thüringen", "thueringen", "th" -> "TH";
+            default -> throw new IllegalArgumentException("Region ist unbekannt: " + originalRegion);
+        };
     }
 
     private record PlzMapping(
