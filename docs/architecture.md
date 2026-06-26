@@ -2,30 +2,35 @@
 
 ## Überblick
 
-Dieser Branch führt ein einzelnes Spring-Boot-Backend ein. Das Backend liest Händler- und Regionsdaten aus statischen Ressourcen und liefert daraus Phase-1-Prospektlinks per REST aus.
+Dieser Stand enthält das Phase-1-Backend und eine eigenständige Java-CLI. Die CLI ruft das REST-Backend per HTTP auf und formatiert die Antworten für Terminal-Nutzung.
 
 ## Module
 
-- `controller`
+- `discounter-backend`
   - `ProspectController` bedient `GET /api/v1/prospects` und `GET /api/v1/prospects/{id}`.
   - `ApiExceptionHandler` übersetzt Fach- und Validierungsfehler in HTTP-Responses.
-- `service`
   - `LocationRequirementService` entscheidet, ob für die gewählte Händlerauswahl Standortkontext Pflicht ist.
-  - `AldiRegionResolverService` validiert PLZ und Regionsangaben und leitet Aldi Nord/Süd her.
-- `config` und `resources`
+  - `AldiRegionResolverService` validiert PLZ und Regionsangaben und leitet Aldi Nord oder Aldi Süd her.
   - `discounters.yml` beschreibt die unterstützten Händler.
   - `plz-bundesland.json` liefert die PLZ- und Bundeslandzuordnung.
+- `discounter-cli`
+  - `DiscounterCli` registriert die Picocli-Kommandos.
+  - `ListCommand` baut Query-Parameter, ruft das Backend auf und formatiert die Ausgabe.
+  - `OutputFormat` schaltet zwischen Text- und JSON-Ausgabe um.
 
-## Request-Fluss
+## Integrationsfluss
 
-1. Der Controller liest Händlerfilter, PLZ und Region aus den Query-Parametern.
-2. Die Services validieren, ob die Kombination zulässig ist.
-3. Für Aldi wird bei Bedarf die Region aus PLZ oder Bundesland abgeleitet.
-4. Das Backend liefert nur offizielle Phase-1-Einstiegspunkte zurück, keine dynamische Filialauflösung.
+1. Die CLI liest Parameter wie `--plz`, `--region`, `--id`, `--ids` und `--format`.
+2. Sie baut daraus einen Request auf `/api/v1/prospects`.
+3. Das Backend validiert Händlerauswahl, PLZ und Region.
+4. Für Aldi wird bei Bedarf die Region aus PLZ oder Bundesland abgeleitet.
+5. Das Backend liefert offizielle Phase-1-Einstiegspunkte zurück.
+6. Die CLI gibt entweder das Original-JSON oder formatierte Textzeilen mit optionalen Hinweisen aus.
 
-## Grenzen dieses Stands
+## Technische Entscheidungen
 
-- Keine Datenbank
-- Kein Caching
-- Keine Händler-spezifischen Resolver aus Phase 2
-- Kein Frontend und keine CLI in diesem Branch
+- Backend als Spring Boot REST-Anwendung ohne Datenbank oder Caching
+- CLI-Kommunikation über `java.net.http.HttpClient`
+- Terminal-Parsing über Picocli
+- Fat-JAR-Bau der CLI über `maven-shade-plugin`
+- Standard-Backend-URL der CLI per Umgebungsvariable `BACKEND_URL` überschreibbar
