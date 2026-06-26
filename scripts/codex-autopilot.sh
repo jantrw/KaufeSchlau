@@ -374,6 +374,23 @@ mark_issue_blocked() {
   gh issue edit "$number" --remove-label "$IN_PROGRESS_LABEL" >/dev/null 2>&1 || true
 }
 
+write_max_rounds_blocker() {
+  local file="$1"
+  local phase="$2"
+  local number="$3"
+  local max_rounds="$4"
+
+  cat > "$file" <<EOF
+BLOCKED
+
+Maximale ${phase}-Review-Runden erreicht.
+- Issue: #$number
+- Phase: $phase
+- Max Runden: $max_rounds
+- Nächster Schritt: Entwicklerentscheidung oder manuelle Überarbeitung außerhalb des Loops.
+EOF
+}
+
 main() {
   init_loop_dir
   ensure_clean_tree
@@ -448,6 +465,7 @@ EOF
       if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
         if [[ "$code_change_rounds" -ge "$MAX_ROUNDS" ]]; then
           echo "Max code review rounds reached for issue #$number."
+          write_max_rounds_blocker "$LOOP_DIR/review.md" "Code" "$number" "$MAX_ROUNDS"
           mark_issue_blocked "$number" "$LOOP_DIR/review.md"
           exit 1
         fi
@@ -509,6 +527,7 @@ EOF
         if grep -q "^CHANGES_REQUESTED" "$LOOP_DIR/review.md"; then
           if [[ "$doc_change_rounds" -ge "$MAX_ROUNDS" ]]; then
             echo "Max doc review rounds reached for issue #$number."
+            write_max_rounds_blocker "$LOOP_DIR/review.md" "Doku" "$number" "$MAX_ROUNDS"
             mark_issue_blocked "$number" "$LOOP_DIR/review.md"
             exit 1
           fi
