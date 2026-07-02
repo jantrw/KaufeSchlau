@@ -49,6 +49,7 @@ kaufeschlau:
       regionType: PLZ_BASIERT
       urlMode: LOCATION_RESOLVED
       prospectUrl: "https://www.netto-online.de/ueber-netto/Online-Prospekte.chtm"
+      marketSearchUrl: "https://www.netto-online.de/filialfinder"
       officialUrl: true
       requiresLocationContext: true
       supportsManualSelectionWithoutPlz: false
@@ -70,6 +71,7 @@ kaufeschlau:
       regionType: PLZ_BASIERT
       urlMode: LOCATION_RESOLVED
       prospectUrl: "https://www.rewe.de/angebote/nationale-angebote/"
+      marketSearchUrl: "https://www.rewe.de/marktsuche/"
       officialUrl: true
       requiresLocationContext: true
       supportsManualSelectionWithoutPlz: false
