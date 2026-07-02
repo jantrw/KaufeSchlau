@@ -56,6 +56,7 @@ describe("HomeView", () => {
         regionType: "PLZ_BASIERT",
         urlMode: "LOCATION_RESOLVED",
         prospectUrl: "https://www.rewe.de/angebote/nationale-angebote/",
+        marketSearchUrl: "https://www.rewe.de/marktsuche/",
         requiresLocationContext: true,
         requiresStoreSelection: true,
       },
@@ -70,7 +71,9 @@ describe("HomeView", () => {
     expect(wrapper.text()).toContain("PLZ-basiert");
     expect(wrapper.text()).not.toContain("PLZ_BASIERT");
     expect(wrapper.text()).toContain("Filiale oder PLZ beim Händler wählen.");
+    expect(wrapper.text()).toContain("Zur Marktsuche");
     expect(wrapper.html()).toContain("https://www.rewe.de/angebote/nationale-angebote/");
+    expect(wrapper.html()).toContain("https://www.rewe.de/marktsuche/");
   });
 
   it("zeigt EDEKA-Angebote und Marktsuche an", async () => {

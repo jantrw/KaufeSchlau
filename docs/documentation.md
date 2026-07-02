@@ -126,6 +126,7 @@ Die Startseite enthält:
 - Wenn eine Region sauber ableitbar ist, erscheint sie als Tag.
 - Wenn das Backend nur einen offiziellen Einstiegspunkt liefert, zeigt die Karte einen Hinweis statt einer erfundenen Region.
 - Händler mit Filialpflicht oder Fallback-Verhalten zeigen zusätzliche Hinweistexte.
+- Wenn der Händler eine offizielle Markt- oder Filialsuche anbietet, zeigt die Karte zusätzlich einen Direktlink dorthin, aktuell z. B. für EDEKA, REWE und Netto Marken-Discount.
 
 ## Frontend-API
 

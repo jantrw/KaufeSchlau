@@ -104,6 +104,7 @@ class ProspectControllerTest {
                 .andExpect(jsonPath("$.items[0].requiresLocationContext").value(true))
                 .andExpect(jsonPath("$.items[0].requiresStoreSelection").value(true))
                 .andExpect(jsonPath("$.items[0].notice").value("Phase 1 nutzt den offiziellen Einstiegspunkt. Filialgenaue Auflösung folgt später."))
+                .andExpect(jsonPath("$.items[0].marketSearchUrl").value("https://www.rewe.de/marktsuche/"))
                 .andExpect(jsonPath("$.items[0].resolverHint").value("PLZ -> Markt -> /angebote/{ort}/{marketId}/{marketSlug}/"));
     }
 
