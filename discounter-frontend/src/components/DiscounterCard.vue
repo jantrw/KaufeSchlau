@@ -7,7 +7,6 @@ defineProps<{
 
 const regionTypeLabels: Record<string, string> = {
   ALDI_REGION: "Aldi-Region",
-  BUNDESWEIT: "Bundesweit",
   OPTIONAL_FILIALE: "Filiale optional",
   PLZ_BASIERT: "PLZ-basiert",
 };
@@ -31,7 +30,6 @@ function hasGenericOfficialHint(prospect: ProspectLink): boolean {
   return Boolean(
     !prospect.notice &&
       !prospect.requiresStoreSelection &&
-      !prospect.fallbackUsed &&
       (prospect.regionType || prospect.urlMode),
   );
 }
@@ -45,11 +43,8 @@ function hasGenericOfficialHint(prospect: ProspectLink): boolean {
     </header>
     <div class="prospect-card-content">
       <p v-if="prospect.notice" class="hint">{{ prospect.notice }}</p>
-      <p v-else-if="prospect.requiresStoreSelection" class="hint">
+      <p v-if="prospect.requiresStoreSelection" class="hint">
         Filiale oder PLZ beim Händler wählen. KaufeSchlau nutzt aktuell den offiziellen Einstiegspunkt.
-      </p>
-      <p v-if="prospect.fallbackUsed" class="hint">
-        Offizieller Einstiegspunkt angezeigt; konkrete Wochenauflösung folgt später.
       </p>
       <p v-if="hasGenericOfficialHint(prospect)" class="hint">
         Offizieller Prospektlink verfügbar.

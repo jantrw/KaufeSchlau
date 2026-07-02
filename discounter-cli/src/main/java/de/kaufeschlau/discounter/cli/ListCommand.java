@@ -137,7 +137,7 @@ public class ListCommand implements Callable<Integer> {
         }
 
         var root = JSON.readTree(body);
-        var prospects = root.isArray() ? root : root.path("items");
+        var prospects = root.path("items");
         if (!prospects.isArray()) {
             out.println(body);
             return;
@@ -145,7 +145,7 @@ public class ListCommand implements Callable<Integer> {
 
         for (var prospect : prospects) {
             var name = text(prospect, "name", text(prospect, "id", "unbekannt"));
-            var url = text(prospect, "prospectUrl", text(prospect, "url", ""));
+            var url = text(prospect, "prospectUrl", "");
             out.println(name + ": " + url);
 
             var notice = text(prospect, "notice", text(prospect, "message", ""));
@@ -158,8 +158,8 @@ public class ListCommand implements Callable<Integer> {
     private static String errorMessage(int status, String body) {
         try {
             var root = JSON.readTree(body);
-            var code = text(root, "code", text(root, "errorCode", ""));
-            var message = text(root, "message", text(root, "detail", text(root, "error", body)));
+            var code = text(root, "code", "");
+            var message = text(root, "message", body);
             return code.isBlank() ? message : code + ": " + message;
         } catch (IOException e) {
             return "Backend-Fehler (" + status + "): " + body;
@@ -169,5 +169,10 @@ public class ListCommand implements Callable<Integer> {
     private static String text(JsonNode node, String field, String fallback) {
         var value = node.path(field);
         return value.isTextual() ? value.asText() : fallback;
+    }
+
+    private enum OutputFormat {
+        plain,
+        json
     }
 }

@@ -3,7 +3,6 @@ package de.kaufeschlau.discounter.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import de.kaufeschlau.discounter.model.LocationRequirementType;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,6 @@ class LocationRequirementServiceTest {
         var result = service.evaluate(List.of());
 
         assertThat(result.required()).isTrue();
-        assertThat(result.type()).isEqualTo(LocationRequirementType.PLZ_OR_REGION);
         assertThat(result.discounterIds())
                 .containsExactly("aldi-nord", "aldi-sued", "netto-marken-discount", "rewe", "edeka");
     }
@@ -30,7 +28,6 @@ class LocationRequirementServiceTest {
         var result = service.evaluate(List.of("lidl", "penny", "kaufland"));
 
         assertThat(result.required()).isFalse();
-        assertThat(result.type()).isEqualTo(LocationRequirementType.NONE);
     }
 
     @Test

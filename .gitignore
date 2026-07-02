@@ -29,6 +29,9 @@ pnpm-debug.log*
 !.env.example
 !.env.sample
 
+# Local agent runtime state
+.codex-loop/
+
 # OS files
 .DS_Store
 Thumbs.db
