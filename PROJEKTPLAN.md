@@ -23,7 +23,7 @@ Der MVP zeigt offizielle Prospekt- und Angebotslinks. Eine spätere Version kann
 - Unterstützung PLZ-basierter Differenzierung, insbesondere bei REWE, EDEKA und Netto Marken-Discount
 - Unterstützung regionaler Varianten bei Aldi Nord und Aldi Süd über PLZ-Mapping
 - Filterbare Händler-/Filialauswahl: Wenn ausschließlich Händler ohne Standortpflicht gewählt werden, darf der Abruf ohne PLZ/Region funktionieren
-- Dynamische Ermittlung aktueller Wochen-URLs, falls ein Händler wöchentlich wechselnde Prospektpfade nutzt
+- Keine hart codierten wöchentlich wechselnden Prospektpfade; dynamische Auflösung folgt über Händler-Resolver, sobald ein Händler sie wirklich braucht
 - Bereitstellung über CLI und Webanwendung
 - Keine Speicherung fremder Prospekt-PDFs oder Produktbilder
 - Keine Produktdaten-Extraktion im MVP
@@ -100,13 +100,14 @@ Für den MVP wird keine Benutzerverwaltung benötigt. Optional kann später loka
 
 Für den MVP wird eine YAML-Konfiguration verwendet. Sie enthält stabile offizielle Einstiegspunkte, Informationen zu Standortpflicht sowie Resolver-Hinweise pro Händler. **Im Code werden keine wöchentlich wechselnden Prospektpfade hart codiert.** Wenn ein Händler jede Woche neue Pfade erzeugt, muss die aktuelle URL zur Laufzeit über einen Resolver oder einen validierten Einstiegspunkt ermittelt werden.
 
-Für Phase 1 sind drei URL-Modi vorgesehen:
+Für Phase 1 sind zwei URL-Modi umgesetzt:
 
 | URL-Modus | Bedeutung | Beispiel |
 |---|---|---|
 | `STATIC_ENTRYPOINT` | Stabiler offizieller Einstiegspunkt, der selbst auf den aktuellen Prospekt führt | Aldi Nord, Aldi Süd, Lidl |
-| `DYNAMIC_WEEKLY` | Aktuelle Wochen-URL kann wechseln und muss dynamisch ermittelt oder validiert werden | Händler mit wechselnden Prospektpfaden |
 | `LOCATION_RESOLVED` | URL hängt von PLZ, Region oder Filiale ab | REWE, EDEKA, Netto |
+
+Dynamische Wochen-URLs bekommen erst dann einen eigenen Resolver oder Modus, wenn ein unterstützter Händler ihn konkret benötigt.
 
 ### Phase 2: Händler-spezifische Resolver
 
@@ -136,7 +137,7 @@ Resolver-Ergebnisse können gecacht werden (inkl. Gültigkeitszeitraum und Abruf
 | Thema | Entscheidung |
 |---|---|
 | Aldi-Region-Erkennung | Automatisch via PLZ-Mapping (Präfix oder Bundesland). Grenzfälle werden in Phase 2 verbessert. |
-| Dynamische Wochen-URLs | Keine hart codierten Wochenpfade. Offizielle Einstiegspunkte in Konfiguration; dynamische Pfade nur als Ergebnis einer Auflösung. |
+| Dynamische Wochen-URLs | Keine hart codierten Wochenpfade. Phase 1 nutzt offizielle Einstiegspunkte; konkrete dynamische Resolver folgen erst bei Bedarf. |
 | PLZ-Pflicht bei „alle Prospekte" | Abruf ohne PLZ/Region wird blockiert, damit Ergebnisse nicht unvollständig regionalisiert sind. |
 | Phase-1-Verhalten bei PLZ-Händlern | Für MVP nur zur offiziellen Seite verlinken; Resolver erst in Phase 2. |
 | Filialauswahl bei mehreren Treffern | Liste anzeigen, sobald Resolver existiert. |
@@ -189,8 +190,8 @@ Resolver-Ergebnisse können gecacht werden (inkl. Gültigkeitszeitraum und Abruf
 |---|---|
 | Sprache | TypeScript |
 | Framework | Vue 3 + Vite |
-| UI-Bibliothek | PrimeVue 4 |
-| HTTP-Client | Axios |
+| UI-Bibliothek | Eigenes CSS |
+| HTTP-Client | Browser Fetch API |
 | Containerisierung | Docker + Nginx |
 
 ---
@@ -254,36 +255,12 @@ Wenn der Nutzer „alle Händler" auswählt, muss die PLZ-/Region-Eingabe sichtb
 
 ## Docker Compose Setup
 
-```yaml
-version: "3.8"
-
-services:
-  backend:
-    build: ./discounter-backend
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-
-  frontend:
-    build: ./discounter-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-
-  cli:
-    build: ./discounter-cli
-    profiles:
-      - cli
-    environment:
-      - BACKEND_URL=http://backend:8080
-```
+Das lokale Compose-Setup steht in `docker-compose.yml`.
 
 CLI starten:
 
 ```bash
-docker compose --profile cli run cli list --plz 65185
+docker compose --profile cli run --rm cli
 ```
 
 ---

@@ -8,10 +8,6 @@ public record Discounter(
         AldiRegion aldiRegion,
         String prospectUrl,
         String marketSearchUrl,
-        boolean officialUrl,
         boolean requiresLocationContext,
-        String locationRequirementReason,
-        boolean supportsManualSelectionWithoutPlz,
-        boolean requiresStoreSelection,
-        String resolverHint) {
+        boolean requiresStoreSelection) {
 }

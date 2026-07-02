@@ -7,30 +7,24 @@ Dieser Stand enthält das Phase-1-Backend, eine eigenständige Java-CLI und ein 
 ## Module
 
 - `discounter-backend`
-  - `ProspectController` bedient `GET /api/v1/prospects` und `GET /api/v1/prospects/{id}`.
-  - `ApiExceptionHandler` übersetzt Fach- und Validierungsfehler in HTTP-Responses.
-  - `LocationRequirementService` entscheidet, ob für die gewählte Händlerauswahl Standortkontext Pflicht ist.
-  - `AldiRegionResolverService` validiert PLZ und Regionsangaben und leitet Aldi Nord oder Aldi Süd her.
-  - `discounters.yml` beschreibt die unterstützten Händler.
-  - `plz-bundesland.json` liefert die PLZ- und Bundeslandzuordnung.
+  - REST-API für Prospektlisten und einzelne Händler.
+  - Validiert Händlerauswahl, PLZ und Region.
+  - Liest Händlerregeln aus `discounters.yml` und PLZ-Zuordnung aus `plz-bundesland.json`.
 - `discounter-cli`
-  - `DiscounterCli` registriert die Picocli-Kommandos.
-  - `ListCommand` baut Query-Parameter, ruft das Backend auf und formatiert die Ausgabe.
-  - `OutputFormat` schaltet zwischen Text- und JSON-Ausgabe um.
+  - Picocli-Befehl `list`.
+  - Ruft dasselbe Backend wie das Frontend auf.
+  - Gibt Text oder das Backend-JSON aus.
 - `discounter-frontend`
-  - `HomeView` koordiniert Eingaben, Laden und Fehlerzustände.
-  - `RetailerFilter`, `RegionInput`, `DiscounterList` und `DiscounterCard` bilden die UI-Segmente.
-  - `services/api.ts` kapselt den Backend-Aufruf und normalisiert die Response.
+  - Vue-Oberfläche für Händlerauswahl, Standortangaben und Ergebnisliste.
+  - Ruft das Backend per `fetch` auf.
 
 ## Integrationsfluss
 
-1. Die CLI liest Parameter wie `--plz`, `--region`, `--id`, `--ids` und `--format`.
-2. Sie baut daraus einen Request auf `/api/v1/prospects`.
-3. Das Backend validiert Händlerauswahl, PLZ und Region.
-4. Für Aldi wird bei Bedarf die Region aus PLZ oder Bundesland abgeleitet.
-5. Das Backend liefert offizielle Phase-1-Einstiegspunkte zurück.
-6. Die CLI gibt entweder das Original-JSON oder formatierte Textzeilen mit optionalen Hinweisen aus.
-7. Das Frontend ruft denselben Endpunkt auf, normalisiert Array- und `items`-Responses und zeigt Links, Hinweise und Validierungsfehler an.
+1. Frontend oder CLI ruft `/api/v1/prospects` auf.
+2. Das Backend validiert Händlerauswahl, PLZ und Region.
+3. Für Aldi wird bei Bedarf Nord oder Süd abgeleitet.
+4. Das Backend liefert Phase-1-Einstiegspunkte als `{ "items": [...] }`.
+5. Frontend und CLI zeigen Links, Hinweise und Backend-Fehler an.
 
 ## Technische Entscheidungen
 
@@ -40,9 +34,8 @@ Dieser Stand enthält das Phase-1-Backend, eine eigenständige Java-CLI und ein 
 - Fat-JAR-Bau der CLI über `maven-shade-plugin`
 - Standard-Backend-URL der CLI per Umgebungsvariable `BACKEND_URL` überschreibbar
 - Frontend mit Vue 3, Vite und TypeScript
-- Frontend-Aufrufe über Axios
+- Frontend-Aufrufe über native `fetch`
 - UI-Validierung für optionale und verpflichtende Standortangaben direkt im Frontend
-- Response-Normalisierung im Frontend unterstützt sowohl reine Arrays als auch `{ items: [...] }`
 
 ## Lokale Integration
 
