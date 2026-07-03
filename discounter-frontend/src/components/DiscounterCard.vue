@@ -7,7 +7,6 @@ defineProps<{
 
 const regionTypeLabels: Record<string, string> = {
   ALDI_REGION: "Aldi-Region",
-  BUNDESWEIT: "Bundesweit",
   OPTIONAL_FILIALE: "Filiale optional",
   PLZ_BASIERT: "PLZ-basiert",
 };

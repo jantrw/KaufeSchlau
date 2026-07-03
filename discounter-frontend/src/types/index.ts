@@ -2,21 +2,17 @@ export interface Retailer {
   id: string;
   name: string;
   requiresLocationContext: boolean;
-  requiresStoreSelection: boolean;
 }
 
-export interface ProspectLink extends Retailer {
+export interface ProspectLink {
+  id: string;
+  name: string;
   regionType?: string;
   urlMode?: string;
   prospectUrl: string;
   marketSearchUrl?: string;
   notice?: string;
   resolvedRegion?: string;
-  resolvedDynamically?: boolean;
-}
-
-export interface LocationRequiredError {
-  error: "LOCATION_REQUIRED";
-  message: string;
-  requiredForRetailers?: string[];
+  requiresLocationContext: boolean;
+  requiresStoreSelection: boolean;
 }

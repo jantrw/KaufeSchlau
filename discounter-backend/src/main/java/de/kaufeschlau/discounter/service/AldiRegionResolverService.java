@@ -47,35 +47,31 @@ public class AldiRegionResolverService {
     }
 
     public AldiRegion resolveRegion(String region) {
+        return resolveRegion(region, true);
+    }
+
+    public AldiRegion resolveBundeslandRegion(String region) {
+        return resolveRegion(region, false);
+    }
+
+    private AldiRegion resolveRegion(String region, boolean allowAldiRegion) {
         if (region == null || region.isBlank()) {
             throw new IllegalArgumentException("Region darf nicht leer sein.");
         }
 
         var normalizedRegion = region.trim().toLowerCase(Locale.ROOT);
-        var directAldiRegion = switch (normalizedRegion) {
-            case "nord", "aldi-nord" -> AldiRegion.NORD;
-            case "sued", "süd", "aldi-sued", "aldi-süd" -> AldiRegion.SUED;
-            default -> null;
-        };
-        if (directAldiRegion != null) {
-            return directAldiRegion;
+        if (allowAldiRegion) {
+            var directAldiRegion = switch (normalizedRegion) {
+                case "nord", "aldi-nord" -> AldiRegion.NORD;
+                case "sued", "süd", "aldi-sued", "aldi-süd" -> AldiRegion.SUED;
+                default -> null;
+            };
+            if (directAldiRegion != null) {
+                return directAldiRegion;
+            }
         }
 
         var bundesland = bundeslandCode(normalizedRegion, region);
-        var aldiRegion = bundeslandToAldiRegion.get(bundesland);
-        if (aldiRegion == null) {
-            throw new IllegalArgumentException("Region ist unbekannt: " + region);
-        }
-
-        return aldiRegion;
-    }
-
-    public AldiRegion resolveBundeslandRegion(String region) {
-        if (region == null || region.isBlank()) {
-            throw new IllegalArgumentException("Region darf nicht leer sein.");
-        }
-
-        var bundesland = bundeslandCode(region.trim().toLowerCase(Locale.ROOT), region);
         var aldiRegion = bundeslandToAldiRegion.get(bundesland);
         if (aldiRegion == null) {
             throw new IllegalArgumentException("Region ist unbekannt: " + region);

@@ -39,8 +39,8 @@ docker compose --profile cli run --rm cli sh -c "mvn -q -pl discounter-cli -am -
 ```bash
 docker compose run --rm backend mvn -pl discounter-backend test
 docker compose run --rm cli mvn -pl discounter-cli -am test
-npm --prefix discounter-frontend run test
-npm --prefix discounter-frontend run build
+docker compose run --rm --no-deps frontend sh -c "npm ci && npm run test"
+docker compose run --rm --no-deps frontend sh -c "npm ci && npm run build"
 ```
 
 Manuelle Kernfälle:
@@ -56,24 +56,3 @@ curl "http://localhost:8080/api/v1/prospects?retailerIds=lidl,penny,kaufland"
 - Standortabhängige Händler liefern offizielle Einstiegspunkte, keine filialgenauen Prospekte.
 - Echte dynamische Prospektauflösung folgt erst in Phase 2.
 - Ohne PLZ, Region oder erlaubten Händlerfilter liefert das Backend `LOCATION_REQUIRED`.
-
-## Codex Autopilot
-
-Das Skript `scripts/codex-autopilot.sh` verarbeitet offene GitHub-Issues in einem festen Loop.
-
-`.codex-loop/` ist lokaler Laufzeitstatus und wird nicht versioniert.
-Projektweite Codex-Konfiguration liegt unter `.codex/`.
-
-Beispiel:
-
-```bash
-WORKER_MODEL=gpt-5.5 WORKER_REASONING_EFFORT=medium REVIEWER_MODEL=gpt-5.4 REVIEWER_REASONING_EFFORT=medium DOC_WORKER_MODEL=gpt-5.4-mini DOC_WORKER_REASONING_EFFORT=low PUSH=true ./scripts/codex-autopilot.sh
-```
-
-## Voraussetzungen
-
-- `git`
-- `gh`
-- `codex` o. Ä.
-- sauberer Working Tree vor Start
-- Zum automatischen Schließen muss `PUSH=true` gesetzt sein, weil das Issue erst nach PR-Erstellung geschlossen wird.
