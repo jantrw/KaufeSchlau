@@ -1,0 +1,7 @@
+.git
+.idea
+.codex
+.playwright-mcp
+**/target
+**/node_modules
+**/dist

@@ -39,13 +39,10 @@ Dieser Stand enthält das Phase-1-Backend, eine eigenständige Java-CLI und ein 
 
 ## Lokale Integration
 
-`docker-compose.yml` startet die lokale Phase-1-Integration ohne eigene Dockerfiles:
+`docker-compose.yml` startet die lokale Phase-1-Integration mit produktionsnahen Images:
 
-- `backend` nutzt das Maven-Image und startet `discounter-backend` per Spring Boot.
-- `frontend` nutzt das Node-Image und startet den Vite-Dev-Server auf Port `5173`.
-- `cli` ist ein optionales Compose-Profil und ruft das Backend über `http://backend:8080` auf.
+- `backend` wird aus `discounter-backend/Dockerfile` gebaut und startet ein Spring-Boot-JAR ohne Maven.
+- `frontend` wird aus `discounter-frontend/Dockerfile` gebaut und liefert den Vite-Build über Nginx auf Port `5173` aus.
+- `cli` ist weiter ein optionales Compose-Profil und ruft das Backend über `http://backend:8080` auf.
 
 Das Backend erlaubt CORS nur für `http://localhost:5173`, damit das lokale Frontend direkt gegen Port `8080` arbeiten kann.
-
-Das ist eine bewusste Phase-1-Entscheidung für lokale Reproduzierbarkeit.
-Produktionsnahe Dockerfiles für Backend und Frontend sind in Issue #18 geplant.

@@ -11,7 +11,7 @@ Voraussetzung:
 Start:
 
 ```bash
-docker compose up backend frontend
+docker compose up --build backend frontend
 ```
 
 Danach:
@@ -19,8 +19,9 @@ Danach:
 - Frontend: <http://localhost:5173>
 - Backend: <http://localhost:8080/api/v1/prospects?plz=65185>
 
-Die Compose-Datei nutzt für Phase 1 bewusst Dev-Container mit Maven und Node.
-Produktionsnahe Dockerfiles folgen später in Issue #18.
+Backend und Frontend werden aus lokalen Dockerfiles gebaut.
+Das Backend-Image startet ein gebautes Spring-Boot-JAR ohne Maven.
+Das Frontend-Image liefert den Vite-Build über Nginx aus.
 
 CLI gegen das laufende Compose-Backend:
 
@@ -37,10 +38,11 @@ docker compose --profile cli run --rm cli sh -c "mvn -q -pl discounter-cli -am -
 ## Checks
 
 ```bash
-docker compose run --rm backend mvn -pl discounter-backend test
-docker compose run --rm cli mvn -pl discounter-cli -am test
-docker compose run --rm --no-deps frontend sh -c "npm ci && npm run test"
-docker compose run --rm --no-deps frontend sh -c "npm ci && npm run build"
+mvn -pl discounter-backend test
+mvn -pl discounter-cli -am test
+npm --prefix discounter-frontend run test
+npm --prefix discounter-frontend run build
+docker compose build backend frontend
 ```
 
 Manuelle Kernfälle:
