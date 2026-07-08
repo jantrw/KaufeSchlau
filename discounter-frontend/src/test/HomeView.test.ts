@@ -23,6 +23,14 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+function prospect(fields: Partial<ProspectLink> & Pick<ProspectLink, "id" | "name" | "prospectUrl">): ProspectLink {
+  return {
+    requiresLocationContext: false,
+    requiresStoreSelection: false,
+    ...fields,
+  };
+}
+
 describe("HomeView", () => {
   beforeEach(() => {
     vi.mocked(fetchProspects).mockReset();
@@ -50,15 +58,16 @@ describe("HomeView", () => {
 
   it("zeigt geladene Prospekte mit Händlerhinweis an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([
-      {
+      prospect({
         id: "rewe",
         name: "REWE",
         regionType: "PLZ_BASIERT",
         urlMode: "LOCATION_RESOLVED",
         prospectUrl: "https://www.rewe.de/angebote/nationale-angebote/",
+        marketSearchUrl: "https://www.rewe.de/marktsuche/",
         requiresLocationContext: true,
         requiresStoreSelection: true,
-      },
+      }),
     ]);
 
     const wrapper = mount(HomeView);
@@ -70,12 +79,14 @@ describe("HomeView", () => {
     expect(wrapper.text()).toContain("PLZ-basiert");
     expect(wrapper.text()).not.toContain("PLZ_BASIERT");
     expect(wrapper.text()).toContain("Filiale oder PLZ beim Händler wählen.");
+    expect(wrapper.text()).toContain("Zur Marktsuche");
     expect(wrapper.html()).toContain("https://www.rewe.de/angebote/nationale-angebote/");
+    expect(wrapper.html()).toContain("https://www.rewe.de/marktsuche/");
   });
 
   it("zeigt EDEKA-Angebote und Marktsuche an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([
-      {
+      prospect({
         id: "edeka",
         name: "EDEKA",
         regionType: "PLZ_BASIERT",
@@ -84,7 +95,7 @@ describe("HomeView", () => {
         marketSearchUrl: "https://www.edeka.de/marktsuche.jsp",
         requiresLocationContext: true,
         requiresStoreSelection: true,
-      },
+      }),
     ]);
 
     const wrapper = mount(HomeView);
@@ -100,14 +111,12 @@ describe("HomeView", () => {
 
   it("zeigt minimale Prospect-Objekte ohne erfundene Region an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([
-      {
+      prospect({
         id: "lidl",
         name: "Lidl",
         prospectUrl: "https://www.lidl.de/c/online-prospekte/s10005610",
         notice: "Offizieller Prospektlink",
-        requiresLocationContext: false,
-        requiresStoreSelection: false,
-      },
+      }),
     ]);
 
     const wrapper = mount(HomeView);
@@ -123,13 +132,11 @@ describe("HomeView", () => {
 
   it("zeigt bei minimalen Prospect-Objekten keinen erfundenen Hinweis an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([
-      {
+      prospect({
         id: "lidl",
         name: "Lidl",
         prospectUrl: "https://www.lidl.de/c/online-prospekte/s10005610",
-        requiresLocationContext: false,
-        requiresStoreSelection: false,
-      },
+      }),
     ]);
 
     const wrapper = mount(HomeView);
@@ -143,17 +150,15 @@ describe("HomeView", () => {
 
   it("zeigt Fallback-Hinweis mit verständlicher Aldi-Region an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([
-      {
+      prospect({
         id: "aldi-sued",
         name: "Aldi Süd",
         regionType: "ALDI_REGION",
         resolvedRegion: "SUED",
         urlMode: "STATIC_ENTRYPOINT",
         prospectUrl: "https://www.aldi-sued.de/prospekte",
-        requiresLocationContext: false,
-        requiresStoreSelection: false,
-        fallbackUsed: true,
-      },
+        notice: "Offizieller Einstiegspunkt angezeigt; konkrete Wochenauflösung folgt später.",
+      }),
     ]);
 
     const wrapper = mount(HomeView);
@@ -167,7 +172,7 @@ describe("HomeView", () => {
 
   it("zeigt Filialpflicht und Fallback-Hinweis zusammen an", async () => {
     vi.mocked(fetchProspects).mockResolvedValue([
-      {
+      prospect({
         id: "rewe",
         name: "REWE",
         regionType: "PLZ_BASIERT",
@@ -175,8 +180,8 @@ describe("HomeView", () => {
         prospectUrl: "https://www.rewe.de/angebote/nationale-angebote/",
         requiresLocationContext: true,
         requiresStoreSelection: true,
-        fallbackUsed: true,
-      },
+        notice: "Offizieller Einstiegspunkt angezeigt; konkrete Wochenauflösung folgt später.",
+      }),
     ]);
 
     const wrapper = mount(HomeView);
@@ -211,20 +216,18 @@ describe("HomeView", () => {
     await wrapper.get("button").trigger("click");
 
     fastRequest.resolve([
-      {
+      prospect({
         id: "lidl",
         name: "Lidl",
         regionType: "OPTIONAL_FILIALE",
         urlMode: "STATIC_ENTRYPOINT",
         prospectUrl: "https://www.lidl.de/c/prospekt/",
-        requiresLocationContext: false,
-        requiresStoreSelection: false,
-      },
+      }),
     ]);
     await wrapper.vm.$nextTick();
 
     slowRequest.resolve([
-      {
+      prospect({
         id: "rewe",
         name: "REWE",
         regionType: "PLZ_BASIERT",
@@ -232,7 +235,7 @@ describe("HomeView", () => {
         prospectUrl: "https://www.rewe.de/angebote/nationale-angebote/",
         requiresLocationContext: true,
         requiresStoreSelection: true,
-      },
+      }),
     ]);
     await wrapper.vm.$nextTick();
 
@@ -244,17 +247,15 @@ describe("HomeView", () => {
   it("zeigt Backend-Fehler an und entfernt alte Ergebnisse", async () => {
     vi.mocked(fetchProspects)
       .mockResolvedValueOnce([
-        {
+        prospect({
           id: "kaufland",
           name: "Kaufland",
           regionType: "OPTIONAL_FILIALE",
           urlMode: "STATIC_ENTRYPOINT",
           prospectUrl: "https://filiale.kaufland.de/prospekte.html",
-          requiresLocationContext: false,
-          requiresStoreSelection: false,
-        },
+        }),
       ])
-      .mockRejectedValueOnce({ response: { data: { message: "Backend-Fehler" } } });
+      .mockRejectedValueOnce({ message: "Backend-Fehler" });
 
     const wrapper = mount(HomeView);
     await inputByLabel(wrapper, "PLZ").setValue("65185");

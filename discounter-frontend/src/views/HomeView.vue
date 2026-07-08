@@ -7,14 +7,14 @@ import { fetchProspects, toUserMessage } from "../services/api";
 import type { ProspectLink, Retailer } from "../types";
 
 const retailers: Retailer[] = [
-  { id: "aldi-nord", name: "Aldi Nord", requiresLocationContext: false, requiresStoreSelection: false },
-  { id: "aldi-sued", name: "Aldi Süd", requiresLocationContext: false, requiresStoreSelection: false },
-  { id: "lidl", name: "Lidl", requiresLocationContext: false, requiresStoreSelection: false },
-  { id: "penny", name: "Penny", requiresLocationContext: false, requiresStoreSelection: false },
-  { id: "netto-marken-discount", name: "Netto Marken-Discount", requiresLocationContext: true, requiresStoreSelection: true },
-  { id: "kaufland", name: "Kaufland", requiresLocationContext: false, requiresStoreSelection: false },
-  { id: "rewe", name: "REWE", requiresLocationContext: true, requiresStoreSelection: true },
-  { id: "edeka", name: "EDEKA", requiresLocationContext: true, requiresStoreSelection: true },
+  { id: "aldi-nord", name: "Aldi Nord", requiresLocationContext: false },
+  { id: "aldi-sued", name: "Aldi Süd", requiresLocationContext: false },
+  { id: "lidl", name: "Lidl", requiresLocationContext: false },
+  { id: "penny", name: "Penny", requiresLocationContext: false },
+  { id: "netto-marken-discount", name: "Netto Marken-Discount", requiresLocationContext: true },
+  { id: "kaufland", name: "Kaufland", requiresLocationContext: false },
+  { id: "rewe", name: "REWE", requiresLocationContext: true },
+  { id: "edeka", name: "EDEKA", requiresLocationContext: true },
 ];
 
 const selectedIds = ref<string[]>([]);

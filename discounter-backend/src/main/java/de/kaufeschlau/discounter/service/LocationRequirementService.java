@@ -3,6 +3,7 @@ package de.kaufeschlau.discounter.service;
 import de.kaufeschlau.discounter.config.DiscounterConfig;
 import de.kaufeschlau.discounter.model.Discounter;
 import de.kaufeschlau.discounter.model.LocationRequirement;
+import de.kaufeschlau.discounter.model.RegionType;
 import java.util.Collection;
 import java.util.List;
 import java.util.LinkedHashMap;
@@ -53,6 +54,6 @@ public class LocationRequirementService {
         if (allDiscountersRequested) {
             return discounter.requiresLocationContext();
         }
-        return discounter.requiresLocationContext() && !discounter.supportsManualSelectionWithoutPlz();
+        return discounter.requiresLocationContext() && discounter.regionType() != RegionType.ALDI_REGION;
     }
 }
